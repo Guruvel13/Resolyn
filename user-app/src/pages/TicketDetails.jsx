@@ -13,7 +13,8 @@ import {
   PhoneCall, 
   User, 
   HelpCircle,
-  FileText
+  FileText,
+  ChevronRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -144,9 +145,12 @@ const TicketDetails = () => {
               <h2 className="text-lg font-bold text-[#111827] flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-[#2563EB] fill-[#2563EB]/10" /> Communication Log
               </h2>
-              <span className="bg-slate-100 text-[#111827] text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded flex items-center gap-1.5">
-                3 New Messages
-              </span>
+              <button 
+                onClick={() => navigate(`/chat/${id || 'TK-8842'}`)}
+                className="text-blue-600 text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1.5 border border-blue-100"
+              >
+                Open Full Chat <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
 
             {/* Chat Area */}
