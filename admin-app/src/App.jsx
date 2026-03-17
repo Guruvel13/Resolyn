@@ -12,6 +12,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="complaints" element={<Complaints />} />
           <Route path="heatmap" element={<AdminMap />} />
+          <Route path="reports" element={<div className="p-10 font-bold text-slate-400 uppercase tracking-widest">Reports Module - Generating Stream...</div>} />
         </Route>
       </Routes>
     </Router>
