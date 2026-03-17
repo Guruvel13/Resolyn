@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, MapPin, Clock, CheckCircle2, AlertCircle, MessageSquare, Target, UserCheck, Wrench, Star, RotateCcw } from 'lucide-react';
+import { FileText, MapPin, Clock, CheckCircle2, AlertCircle, MessageSquare, Target, UserCheck, Wrench, Star, RotateCcw, Search } from 'lucide-react';
 
 const ticketStatuses = [
   { id: 'pending', label: 'Pending Review', icon: <Target className="w-5 h-5 text-yellow-600" />, color: 'bg-yellow-100 border-yellow-300 text-yellow-700 font-medium' },
@@ -142,9 +142,15 @@ const Dashboard = () => {
               <div className="flex flex-col gap-2">
                 <button 
                   onClick={() => navigate(`/chat/${ticket.id}`)}
-                  className="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-colors shadow-sm"
+                  className="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-colors shadow-sm text-sm"
                 >
-                  <MessageSquare className="w-5 h-5" /> Direct Message
+                  <MessageSquare className="w-4 h-4" /> Message Officer
+                </button>
+                <button 
+                  onClick={() => navigate(`/ticket/${ticket.id}`)}
+                  className="w-full flex justify-center items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3 rounded-xl font-bold transition-colors shadow-sm text-sm"
+                >
+                  <Search className="w-4 h-4" /> View Ticket Deep-Dive
                 </button>
               </div>
 

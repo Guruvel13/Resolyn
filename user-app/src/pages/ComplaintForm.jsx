@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Droplet, Power, Truck, Trash2, TreePine, MapPin, UploadCloud, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Droplet, Power, Truck, Trash2, TreePine, MapPin, UploadCloud, CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import MapPicker from '../components/MapPicker';
 
@@ -29,6 +29,23 @@ const ComplaintForm = () => {
     position: null, // [lat, lng]
     description: '',
   });
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+
+  const handleAutoFetch = () => {
+    setIsFetchingLocation(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const coords = [pos.coords.latitude, pos.coords.longitude];
+        setFormData({...formData, position: coords});
+        setIsFetchingLocation(false);
+      }, () => {
+        setIsFetchingLocation(false);
+        alert('Failed to fetch location automatically.');
+      });
+    } else {
+      setIsFetchingLocation(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'image/*': ['.jpeg', '.jpg', '.png'] },
@@ -149,10 +166,14 @@ const ComplaintForm = () => {
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-slate-900">Pin Exact Location</h2>
-                <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">
-                  <MapPin className="w-4 h-4" /> 
-                  <span className="font-semibold">Auto-fetching GPS...</span>
-                </div>
+                <button 
+                  onClick={handleAutoFetch}
+                  disabled={isFetchingLocation}
+                  className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg border border-indigo-100 transition-colors"
+                >
+                  <MapPin className={`w-4 h-4 ${isFetchingLocation ? 'animate-bounce' : ''}`} /> 
+                  <span className="font-semibold">{isFetchingLocation ? 'Auto-fetching GPS...' : (formData.position ? 'Auto-fetching GPS...' : 'Auto-fetch GPS')}</span>
+                </button>
               </div>
               <p className="text-slate-500 text-sm -mt-4">Move the pin to the exact location of the issue.</p>
               
