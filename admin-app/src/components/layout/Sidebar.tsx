@@ -9,7 +9,6 @@ const Sidebar: React.FC = () => {
     { icon: <Building2 size={20} />, label: 'Departments', path: '/departments' },
     { icon: <MapIcon size={20} />, label: 'Live Map', path: '/map' },
     { icon: <Users size={20} />, label: 'User Management', path: '/users' },
-    { icon: <Shield size={20} />, label: 'Audit Logs', path: '/audit-logs' },
   ];
 
   return (

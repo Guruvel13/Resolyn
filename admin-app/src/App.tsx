@@ -6,7 +6,6 @@ import Complaints from './pages/Complaints';
 import Departments from './pages/Departments';
 import Map from './pages/Map';
 import Users from './pages/Users';
-import AuditLogs from './pages/AuditLogs';
 
 function App() {
   return (
@@ -17,7 +16,6 @@ function App() {
         <Route path="departments" element={<Departments />} />
         <Route path="map" element={<Map />} />
         <Route path="users" element={<Users />} />
-        <Route path="audit-logs" element={<AuditLogs />} />
       </Route>
     </Routes>
   );
