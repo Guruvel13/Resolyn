@@ -1,3 +1,6 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Filter, MoreVertical, Download, ChevronRight, MapPin, Clock, Tag, X, User as UserIcon, ExternalLink, MessageSquare, Check } from 'lucide-react';
+import { api } from '../services/api';
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, MoreVertical, Download, ChevronRight, MapPin, Clock, Tag, X, User, ExternalLink, MessageSquare, Check, AlertCircle, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,9 +17,10 @@ const mockComplaints = [
 ];
 
 const Complaints: React.FC = () => {
-  const [complaints, setComplaints] = useState(mockComplaints);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [filterDept, setFilterDept] = useState('All Departments');
   const [filterDate, setFilterDate] = useState('Last 7 Days');
   const [filterPriority, setFilterPriority] = useState('All Priority');
@@ -29,8 +33,28 @@ const Complaints: React.FC = () => {
   const priorities = ['All Priority', 'Critical', 'High', 'Medium', 'Low'];
   const dates = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'All Time'];
 
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      const data = await api.get('/complaints');
+      if (Array.isArray(data)) {
+        setComplaints(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch complaints:', err);
+    }
+  };
+
   const filteredComplaints = useMemo(() => {
     return complaints.filter(item => {
+      const statusMatches = activeTab === 'all' || item.status.toLowerCase() === activeTab;
+      const searchMatches = (item._id?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             item.location?.address?.toLowerCase().includes(searchTerm.toLowerCase()));
+      return statusMatches && searchMatches;
       const matchesTab = activeTab === 'all' || item.status.toLowerCase() === activeTab;
       const matchesDept = filterDept === 'All Departments' || item.department === filterDept;
       const matchesPriority = filterPriority === 'All Priority' || item.priority === filterPriority;
@@ -82,21 +106,27 @@ const Complaints: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleStatusUpdate = (id: string, newStatus: string) => {
+  const handleStatusUpdate = async (id: string, newStatus: string) => {
     setIsProcessing(true);
-    setTimeout(() => {
-      setComplaints(prev => prev.map(c => 
-        c.id === id ? { ...c, status: newStatus } : c
-      ));
-      if (selectedItem?.id === id) {
-        setSelectedItem(prev => prev ? { ...prev, status: newStatus } : null);
+    try {
+      const updated = await api.put(`/complaints/${id}`, { status: newStatus });
+      if (updated._id) {
+        setComplaints(prev => prev.map(c => 
+          c._id === id ? { ...c, status: newStatus } : c
+        ));
+        if (selectedItem?._id === id) {
+          setSelectedItem((prev: any) => prev ? { ...prev, status: newStatus } : null);
+        }
       }
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    } finally {
       setIsProcessing(false);
-    }, 800);
+    }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'assigned': return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'in progress': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
@@ -106,7 +136,7 @@ const Complaints: React.FC = () => {
   };
   
   const getPriorityColor = (priority: string) => {
-    switch (priority.toLowerCase()) {
+    switch (priority?.toLowerCase()) {
       case 'critical': return 'text-rose-600';
       case 'high': return 'text-orange-600';
       case 'medium': return 'text-amber-600';
@@ -286,6 +316,11 @@ const Complaints: React.FC = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredComplaints.length > 0 ? (
                 filteredComplaints.map((complaint) => (
+                  <tr key={complaint._id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => setSelectedItem(complaint)}>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-indigo-600 mb-1.5 bg-indigo-50 w-fit px-2 py-0.5 rounded uppercase tracking-widest">{complaint._id?.substring(0, 8)}</span>
+                        <span className="font-bold text-slate-900 text-sm tracking-tight group-hover:text-indigo-600 transition-colors uppercase truncate max-w-[200px]">{complaint.title}</span>
                   <tr key={complaint.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => setSelectedItem(complaint)}>
                     <td className="px-8 py-7">
                       <div className="flex flex-col gap-1.5">
@@ -305,6 +340,8 @@ const Complaints: React.FC = () => {
                     </td>
                     <td className="px-8 py-7">
                       <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          <MapPin size={12} className="text-slate-300" /> {complaint.location?.address || 'Pinned Location'}
                         <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 w-fit px-2 py-1 rounded-lg border border-slate-100">
                           <MapPin size={10} className="text-rose-500" /> {complaint.location}
                         </div>
@@ -329,6 +366,7 @@ const Complaints: React.FC = () => {
                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 shadow-inner">
                           <Search size={32} className="text-slate-200" />
                        </div>
+                       <p className="text-slate-400 font-bold uppercase text-xs tracking-[0.2em]">No records in database</p>
                        <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">No results found for current criteria</p>
                     </div>
                   </td>
@@ -351,7 +389,7 @@ const Complaints: React.FC = () => {
                     </div>
                     <div>
                         <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Incident Record</h3>
-                        <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-[0.23em] mt-1 bg-indigo-50 px-2 py-0.5 rounded-full inline-block">{selectedItem.id}</p>
+                        <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-[0.23em] mt-1 bg-indigo-50 px-2 py-0.5 rounded-full inline-block">{selectedItem._id}</p>
                     </div>
                  </div>
                  <button onClick={() => !isProcessing && setSelectedItem(null)} className="w-12 h-12 flex items-center justify-center bg-slate-50 text-slate-400 hover:text-slate-900 transition-all rounded-2xl active:scale-90 hover:shadow-md border border-slate-100">
@@ -374,7 +412,7 @@ const Complaints: React.FC = () => {
 
                  <div className="bg-slate-50/50 rounded-[2rem] p-8 space-y-5 border border-slate-100 shadow-inner">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Initial Briefing</h4>
-                    <p className="text-base text-slate-600 leading-relaxed font-medium">{selectedItem.desc}</p>
+                    <p className="text-base text-slate-600 leading-relaxed font-medium">{selectedItem.description}</p>
                  </div>
 
                  <div className="grid grid-cols-2 gap-8">
@@ -382,11 +420,11 @@ const Complaints: React.FC = () => {
                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Information Node</h4>
                        <div className="flex items-center gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
                           <div className="w-12 h-12 bg-indigo-50 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                             {selectedItem.reporter.charAt(0)}
+                             {selectedItem.user?.name?.charAt(0) || 'U'}
                           </div>
                           <div>
-                             <p className="text-sm font-bold text-slate-900">{selectedItem.reporter}</p>
-                             <p className="text-[10px] font-medium text-slate-400 font-mono tracking-tighter">{selectedItem.phone}</p>
+                             <p className="text-sm font-bold text-slate-900">{selectedItem.user?.name || 'Anonymous'}</p>
+                             <p className="text-[10px] font-medium text-slate-400 font-mono tracking-tighter">{selectedItem.user?.email || 'N/A'}</p>
                           </div>
                        </div>
                     </div>
@@ -396,7 +434,7 @@ const Complaints: React.FC = () => {
                           <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0 border border-rose-100">
                              <MapPin size={20} className="text-rose-600" />
                           </div>
-                          <p className="text-xs font-bold text-slate-700 leading-snug">{selectedItem.location}</p>
+                          <p className="text-xs font-bold text-slate-700 leading-snug">{selectedItem.location?.address || 'Pinned Location'}</p>
                        </div>
                     </div>
                  </div>
@@ -407,15 +445,15 @@ const Complaints: React.FC = () => {
                        {selectedItem.status !== 'Resolved' ? (
                          <>
                             <button 
-                              onClick={() => handleStatusUpdate(selectedItem.id, 'Assigned')}
+                              onClick={() => handleStatusUpdate(selectedItem._id, 'Assigned')}
                               disabled={isProcessing}
                               className={`flex items-center justify-center gap-3 py-4.5 bg-slate-900 text-white rounded-[1.25rem] text-sm font-bold shadow-xl shadow-slate-200 transition-all active:scale-95 ${isProcessing ? 'opacity-70' : 'hover:bg-slate-800'}`}
                             >
-                               {isProcessing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <User size={18} />}
+                               {isProcessing ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <UserIcon size={18} />}
                                {isProcessing ? 'SYNCHRONIZING' : 'ASSIGN OFFICIAL'}
                             </button>
                             <button 
-                              onClick={() => handleStatusUpdate(selectedItem.id, 'Resolved')}
+                              onClick={() => handleStatusUpdate(selectedItem._id, 'Resolved')}
                               disabled={isProcessing}
                               className="flex items-center justify-center gap-3 py-4.5 bg-emerald-600 text-white rounded-[1.25rem] text-sm font-bold shadow-xl shadow-emerald-100 transition-all hover:bg-emerald-700 active:scale-95"
                             >
