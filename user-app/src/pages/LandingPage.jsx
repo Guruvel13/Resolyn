@@ -17,6 +17,7 @@ import {
   Minus
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import DotGrid from '../components/react-bits/DotGrid';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -90,7 +91,24 @@ const LandingPage = () => {
   return (
     <div className="w-full pb-10 relative">
       {/* Background that breaks out of container */}
-      <div className="absolute top-0 left-0 w-full h-[600px] bg-[#f8f9fb] z-0" style={{ marginLeft: 'calc(-50vw + 50%)', width: '100vw', marginTop: '-1.5rem' }} />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[100vw] h-[700px] bg-[#f8f9fb] z-0 overflow-hidden" style={{ marginTop: '-1.5rem' }}>
+        <div className="absolute inset-0 opacity-40">
+          <DotGrid
+            dotSize={4}
+            gap={18}
+            baseColor="#cbd5e1"
+            activeColor="#0256eb"
+            proximity={120}
+            speedTrigger={100}
+            shockRadius={250}
+            shockStrength={5}
+            maxSpeed={5000}
+            resistance={750}
+            returnDuration={1.5}
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#f8f9fb]/20 to-[#f8f9fb]"></div>
+      </div>
       
       {/* Hero Section */}
       <section className="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 mb-4 z-10 flex flex-col items-center">
@@ -128,7 +146,7 @@ const LandingPage = () => {
       </section>
 
       {/* Metrics Bar */}
-      <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 mb-20 max-w-5xl mx-auto">
+      <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 mb-20">
         {metrics.map(metric => (
           <div key={metric.id} className="bg-white rounded-[1rem] p-6 border border-slate-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] flex items-center justify-between hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-shadow">
             <div>

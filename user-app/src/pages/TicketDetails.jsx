@@ -53,7 +53,7 @@ const TicketDetails = () => {
   ];
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 mb-12">
+    <div className="w-full mx-auto mb-12">
       
       {/* Header Area */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 pt-4">

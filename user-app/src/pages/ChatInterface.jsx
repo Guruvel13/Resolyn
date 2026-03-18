@@ -137,7 +137,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto h-[calc(100vh-140px)] flex flex-row bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
+    <div className="w-full h-[calc(100vh-140px)] flex flex-row bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
       
       {/* 1. Sidebar - Chat List */}
       <div className="hidden lg:flex flex-col w-80 border-r border-slate-100 bg-[#f8f9fb]">
