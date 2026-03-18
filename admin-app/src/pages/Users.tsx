@@ -119,15 +119,15 @@ const Users: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-           <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-100 group">
-              <div className="relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
-                 <Shield className="mb-4 opacity-50" size={32} />
-                 <h3 className="text-xl font-bold mb-2">Access Control</h3>
-                 <p className="text-indigo-100 text-sm leading-relaxed mb-6">Review system Audit Logs for critical and unauthorized changes.</p>
-                 <button className="w-full bg-white text-indigo-600 font-bold py-3 rounded-xl text-sm hover:bg-indigo-50 transition-all shadow-lg shadow-indigo-900/20">Go to Audit Logs</button>
-              </div>
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
-           </div>
+            <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-slate-200 group">
+               <div className="relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
+                  <Key className="mb-4 text-amber-400" size={32} />
+                  <h3 className="text-xl font-bold mb-2">Identity & Access</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed mb-6">Manage global system permissions and departmental security clearances.</p>
+                  <button className="w-full bg-white text-slate-900 font-bold py-3 rounded-xl text-sm hover:bg-slate-50 transition-all shadow-lg shadow-slate-900/20">Configure Roles</button>
+               </div>
+               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
+            </div>
 
            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
               <h4 className="font-bold text-slate-900 mb-6 flex items-center gap-2">

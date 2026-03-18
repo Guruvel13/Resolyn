@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, Building2, Map as MapIcon, Settings, Users, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Building2, Map as MapIcon, Settings, Users } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const navItems = [

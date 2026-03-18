@@ -6,6 +6,7 @@ import Complaints from './pages/Complaints';
 import Departments from './pages/Departments';
 import Map from './pages/Map';
 import Users from './pages/Users';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="departments" element={<Departments />} />
         <Route path="map" element={<Map />} />
         <Route path="users" element={<Users />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );
