@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { AlertTriangle, Info, Shield, Filter, Maximize2, User, Landmark, Zap, Droplets, Construction, Search } from 'lucide-react';
+import { AlertTriangle, Shield, Maximize2, User, Landmark, Zap, Droplets, Construction, Search, Info, Tag } from 'lucide-react';
+import { api } from '../services/api';
 
 // Fix for default marker icons in React-Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -16,13 +17,6 @@ let DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
-
-const incidents = [
-  { id: 1, position: [12.9352, 77.6245], type: 'Water', severity: 'High', title: 'Major Pipe Burst', status: 'Fixing', icon: <Droplets size={14} /> },
-  { id: 2, position: [12.9128, 77.6387], type: 'Electrical', severity: 'Medium', title: 'Transformer Spark', status: 'Assigned', icon: <Zap size={14} /> },
-  { id: 3, position: [12.9716, 77.5946], type: 'Roads', severity: 'Critical', title: 'Sinkhole Detected', status: 'Pending', icon: <Construction size={14} /> },
-  { id: 4, position: [12.9279, 77.6833], type: 'Sanitation', severity: 'Low', title: 'Illegal Dumping', status: 'Reviewing', icon: <Info size={14} /> },
-];
 
 const officials = [
   { id: 101, position: [12.9300, 77.6200], name: 'Officer Rajesh', Status: 'On-site' },
@@ -39,6 +33,21 @@ const Map: React.FC = () => {
   const [viewMode, setViewMode] = useState<'incidents' | 'officials' | 'assets'>('incidents');
   const [liveOfficials, setLiveOfficials] = useState(officials);
   const [mapSearch, setMapSearch] = useState('');
+  const [complaints, setComplaints] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const data = await api.get('/complaints');
+        if (Array.isArray(data)) {
+          setComplaints(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch complaints for map:', err);
+      }
+    };
+    fetchComplaints();
+  }, []);
 
   // Simulate Live Movement
   useEffect(() => {
@@ -54,10 +63,29 @@ const Map: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const filteredIncidents = incidents.filter(i => 
-    i.title.toLowerCase().includes(mapSearch.toLowerCase()) || 
-    i.type.toLowerCase().includes(mapSearch.toLowerCase())
-  );
+  const getIcon = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case 'water': return <Droplets size={14} />;
+      case 'electrical': return <Zap size={14} />;
+      case 'roads': return <Construction size={14} />;
+      default: return <Info size={14} />;
+    }
+  };
+
+  const filteredIncidents = useMemo(() => {
+    return complaints.filter(i => 
+      i.title?.toLowerCase().includes(mapSearch.toLowerCase()) || 
+      i.department?.toLowerCase().includes(mapSearch.toLowerCase()) ||
+      i.location?.address?.toLowerCase().includes(mapSearch.toLowerCase())
+    ).map(i => ({
+      ...i,
+      id: i._id,
+      position: [i.location?.coordinates?.[1] || 12.9352, i.location?.coordinates?.[0] || 77.6245],
+      type: i.department,
+      severity: i.priority,
+      icon: getIcon(i.department)
+    }));
+  }, [complaints, mapSearch]);
 
   return (
     <div className="h-full flex flex-col space-y-6 animate-in fade-in duration-700">
@@ -114,7 +142,7 @@ const Map: React.FC = () => {
                     <div className="flex items-center gap-3">
                        <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg">{incident.icon}</div>
                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Node ID: {incident.id}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Node ID: {incident.id?.substring(0, 8)}</p>
                           <p className="text-[10px] font-bold text-indigo-600 uppercase transition-colors">{incident.type}</p>
                        </div>
                     </div>

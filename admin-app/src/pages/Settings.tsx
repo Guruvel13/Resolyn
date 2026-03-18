@@ -1,37 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Bell, Shield, Globe, Monitor, Save, Trash2, Key, Check, AlertCircle, Eye, EyeOff, ArrowUpRight, Map as MapIcon } from 'lucide-react';
+import { api } from '../services/api';
 
 const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Profile');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // States for interactive settings
-  const [notifications, setNotifications] = useState([
-    { id: 0, title: 'Emergency Broadcasts', desc: 'Critical sector-wide alerts and hazard warnings.', enabled: true },
-    { id: 1, title: 'New Complaints', desc: 'Receive notifications when new incidents are filed in your sector.', enabled: true },
-    { id: 2, title: 'Official Performance', desc: 'Summary reports on staff efficiency and task completion.', enabled: false },
-    { id: 3, title: 'System Updates', desc: 'Information about platform maintenance and new features.', enabled: true },
-  ]);
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    bio: ''
+  });
+
+  const [notificationSettings, setNotificationSettings] = useState({
+    emergency: true,
+    newComplaints: true,
+    performance: false,
+    systemUpdates: true
+  });
+
   const [twoFactor, setTwoFactor] = useState(true);
-  const [selectedTheme, setSelectedTheme] = useState('Light');
-  const [language, setLanguage] = useState('English (US)');
-  const [timezone, setTimezone] = useState('(GMT+05:30) India Standard Time');
+  const [appearance, setAppearance] = useState({
+    theme: 'Light',
+    compactMode: false
+  });
+  const [region, setRegion] = useState({
+    language: 'English (US)',
+    timezone: '(GMT+05:30) India Standard Time'
+  });
 
-  const toggleNotification = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n));
-  };
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await api.get('/users/profile');
+        if (data) {
+          setProfileData({
+            name: data.name || '',
+            email: data.email || '',
+            bio: data.bio || ''
+          });
+          setNotificationSettings({
+            emergency: data.notifications?.emergency ?? true,
+            newComplaints: data.notifications?.newComplaints ?? true,
+            performance: data.notifications?.performance ?? false,
+            systemUpdates: data.notifications?.systemUpdates ?? true
+          });
+          setAppearance({
+            theme: data.appearance?.theme || 'Light',
+            compactMode: data.appearance?.compactMode || false
+          });
+          setRegion({
+            language: data.region?.language || 'English (US)',
+            timezone: data.region?.timezone || '(GMT+05:30) India Standard Time'
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch settings:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      await api.put('/users/profile', {
+        name: profileData.name,
+        email: profileData.email,
+        bio: profileData.bio,
+        notifications: {
+          ...notificationSettings
+        },
+        appearance: {
+          ...appearance
+        },
+        region: {
+          ...region
+        }
+      });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-    }, 1200);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const renderContent = () => {
+    if (loading) return (
+      <div className="flex items-center justify-center p-20">
+        <div className="w-10 h-10 border-4 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+
     switch (activeTab) {
       case 'Profile':
         return (
@@ -42,38 +109,63 @@ const Settings: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Admin Name</label>
-                <input type="text" defaultValue="Admin User" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium" />
+                <input 
+                  type="text" 
+                  value={profileData.name} 
+                  onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium" 
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Official Email</label>
-                <input type="email" defaultValue="admin@resolyn.gov" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium" />
+                <input 
+                  type="email" 
+                  value={profileData.email} 
+                  onChange={(e) => setProfileData({...profileData, email: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium" 
+                />
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Departmental Bio</label>
-                <textarea rows={3} defaultValue="Managing nodal operations for Bangalore South sector." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium resize-none shadow-inner" />
+                <textarea 
+                  rows={3} 
+                  value={profileData.bio} 
+                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                  placeholder="Tell us about your role..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium resize-none shadow-inner" 
+                />
               </div>
             </div>
           </section>
         );
       case 'Notifications':
+        const notifItems = [
+          { key: 'emergency', title: 'Emergency Broadcasts', desc: 'Critical sector-wide alerts and hazard warnings.' },
+          { key: 'newComplaints', title: 'New Complaints', desc: 'Receive notifications when new incidents are filed in your sector.' },
+          { key: 'performance', title: 'Official Performance', desc: 'Summary reports on staff efficiency and task completion.' },
+          { key: 'systemUpdates', title: 'System Updates', desc: 'Information about platform maintenance and new features.' },
+        ];
         return (
           <section className="bg-white rounded-[2.5rem] border border-slate-200 p-8 shadow-sm animate-in slide-in-from-bottom-4 duration-500">
             <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                <Bell size={20} className="text-rose-500" /> Alert Preferences
             </h3>
             <div className="space-y-4">
-              {notifications.map((item) => (
+              {notifItems.map((item) => (
                 <div 
-                  key={item.id} 
-                  onClick={() => toggleNotification(item.id)}
+                  key={item.key} 
+                  onClick={() => setNotificationSettings({
+                    ...notificationSettings, 
+                    [item.key]: !notificationSettings[item.key as keyof typeof notificationSettings]
+                  })}
                   className="flex items-center justify-between p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:border-slate-300 hover:bg-white transition-all group cursor-pointer"
                 >
                    <div>
                       <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{item.title}</p>
                       <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
                    </div>
-                   <div className={`w-12 h-6 rounded-full relative p-1 transition-all duration-300 ${item.enabled ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-slate-300'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute transition-all duration-300 shadow-sm ${item.enabled ? 'right-1' : 'left-1'}`}></div>
+                   <div className={`w-12 h-6 rounded-full relative p-1 transition-all duration-300 ${notificationSettings[item.key as keyof typeof notificationSettings] ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-slate-300'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute transition-all duration-300 shadow-sm ${notificationSettings[item.key as keyof typeof notificationSettings] ? 'right-1' : 'left-1'}`}></div>
                    </div>
                 </div>
               ))}
@@ -146,12 +238,12 @@ const Settings: React.FC = () => {
                {['Light', 'Dark', 'System'].map((theme) => (
                   <div 
                     key={theme} 
-                    onClick={() => setSelectedTheme(theme)}
-                    className={`p-5 rounded-[2rem] border-2 transition-all cursor-pointer text-center group ${selectedTheme === theme ? 'border-slate-900 bg-slate-50 shadow-xl' : 'border-slate-100 hover:border-slate-200 bg-white hover:shadow-md'}`}
+                    onClick={() => setAppearance({...appearance, theme: theme as 'Light' | 'Dark' | 'System'})}
+                    className={`p-5 rounded-[2rem] border-2 transition-all cursor-pointer text-center group ${appearance.theme === theme ? 'border-slate-900 bg-slate-50 shadow-xl' : 'border-slate-100 hover:border-slate-200 bg-white hover:shadow-md'}`}
                   >
                      <div className={`w-full aspect-square sm:aspect-video rounded-2xl mb-4 transition-transform group-hover:scale-95 duration-500 ${theme === 'Dark' ? 'bg-slate-900' : theme === 'System' ? 'bg-gradient-to-br from-white via-slate-200 to-slate-900' : 'bg-white shadow-inner border border-slate-50'}`}></div>
-                     <p className={`text-sm font-bold ${selectedTheme === theme ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>{theme}</p>
-                     {selectedTheme === theme && (
+                     <p className={`text-sm font-bold ${appearance.theme === theme ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>{theme}</p>
+                     {appearance.theme === theme && (
                        <div className="mt-2 flex justify-center">
                           <div className="w-1.5 h-1.5 rounded-full bg-slate-900"></div>
                        </div>
@@ -165,8 +257,11 @@ const Settings: React.FC = () => {
                      <p className="text-sm font-bold text-slate-900">Compact Mode</p>
                      <p className="text-xs text-slate-500 mt-1 font-medium">Maximize data density in tables and lists.</p>
                   </div>
-                  <div className="w-12 h-6 bg-slate-200 rounded-full relative p-1 shadow-inner cursor-not-allowed opacity-50">
-                     <div className="w-4 h-4 bg-white rounded-full absolute left-1"></div>
+                  <div 
+                    onClick={() => setAppearance({...appearance, compactMode: !appearance.compactMode})}
+                    className={`w-12 h-6 rounded-full relative p-1 shadow-inner cursor-pointer transition-all ${appearance.compactMode ? 'bg-slate-900' : 'bg-slate-200'}`}
+                  >
+                     <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${appearance.compactMode ? 'right-1' : 'left-1'}`}></div>
                   </div>
                </div>
             </div>
@@ -183,8 +278,8 @@ const Settings: React.FC = () => {
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">Preferred Language</label>
                 <div className="relative group">
                   <select 
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
+                    value={region.language}
+                    onChange={(e) => setRegion({...region, language: e.target.value})}
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-teal-500/5 focus:border-teal-500 transition-all outline-none font-bold text-slate-800 appearance-none shadow-sm group-hover:shadow-md"
                   >
                     <option>English (US)</option>
@@ -201,8 +296,8 @@ const Settings: React.FC = () => {
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">Timezone</label>
                 <div className="relative group">
                   <select 
-                    value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
+                    value={region.timezone}
+                    onChange={(e) => setRegion({...region, timezone: e.target.value})}
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-teal-500/5 focus:border-teal-500 transition-all outline-none font-bold text-slate-800 appearance-none shadow-sm group-hover:shadow-md"
                   >
                     <option>(GMT+05:30) India Standard Time</option>
@@ -283,7 +378,7 @@ const Settings: React.FC = () => {
                 ) : (
                   <Save size={18} />
                 )}
-                {isSaving ? 'Processing...' : 'Save Configurations'}
+                {isSaving ? 'Saving...' : 'Save Configurations'}
              </button>
           </div>
         </div>

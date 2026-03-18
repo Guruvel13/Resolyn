@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Droplet, Power, Truck, Trash2, TreePine, MapPin, UploadCloud, CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
@@ -58,9 +59,46 @@ const ComplaintForm = () => {
 
   const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 4));
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
-  const submitForm = () => {
-    // API logic to backend
-    navigate('/dashboard');
+  const saveDraft = async () => {
+    const payload = {
+      department: formData.department?.name || 'Unclassified',
+      title: formData.description ? formData.description.substring(0, 50) : 'Incomplete Report',
+      description: formData.description,
+      position: formData.position,
+      progress: `${(currentStep / 4) * 100}%`
+    };
+
+    try {
+      await api.post('/api/drafts', payload);
+      navigate('/profile');
+    } catch (err) {
+      alert('Failed to save draft.');
+    }
+  };
+
+  const submitForm = async () => {
+    const payload = {
+      title: formData.description.substring(0, 50) + '...',
+      description: formData.description,
+      department: formData.department.name,
+      priority: 'Medium',
+      location: {
+        type: 'Point',
+        coordinates: [formData.position[1], formData.position[0]],
+        address: 'Manually Pinned Location'
+      }
+    };
+
+    try {
+      const result = await api.post('/complaints', payload);
+      if (result._id) {
+        navigate('/dashboard');
+      } else {
+        alert('Failed to submit: ' + (result.message || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Network error.');
+    }
   };
 
   const isNextDisabled = () => {
@@ -226,13 +264,23 @@ const ComplaintForm = () => {
 
       {/* Footer Navigation */}
       <div className="mt-8 flex items-center justify-between">
-        <button 
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'}`}
-        >
-          <ChevronLeft className="w-5 h-5" /> Back
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${currentStep === 1 ? 'opacity-0 pointer-events-none' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'}`}
+          >
+            <ChevronLeft className="w-5 h-5" /> Back
+          </button>
+          {currentStep > 1 && currentStep < 4 && (
+            <button 
+              onClick={saveDraft}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all text-sm"
+            >
+              Save as Draft
+            </button>
+          )}
+        </div>
 
         {currentStep < 4 ? (
           <button 

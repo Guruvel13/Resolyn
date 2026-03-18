@@ -1,48 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, MapPin, Clock, CheckCircle2, AlertCircle, MessageSquare, Target, UserCheck, Wrench, Star, RotateCcw, Search } from 'lucide-react';
+import { api } from '../services/api';
 
 const ticketStatuses = [
-  { id: 'pending', label: 'Pending Review', icon: <Target className="w-5 h-5 text-yellow-600" />, color: 'bg-yellow-100 border-yellow-300 text-yellow-700 font-medium' },
-  { id: 'assigned', label: 'Official Assigned', icon: <UserCheck className="w-5 h-5 text-blue-600" />, color: 'bg-blue-100 border-blue-300 text-blue-700 font-medium' },
-  { id: 'in_progress', label: 'On-Site Fix', icon: <Wrench className="w-5 h-5 text-indigo-600" />, color: 'bg-indigo-100 border-indigo-300 text-indigo-700 font-medium' },
-  { id: 'resolved', label: 'Resolved', icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />, color: 'bg-emerald-100 border-emerald-300 text-emerald-700 font-medium' }
-];
-
-const mockTickets = [
-  {
-    id: "RES-9801",
-    department: "Water & Supply",
-    issue: "Massive pipe burst flooding main road.",
-    date: "12 Oct 2026, 09:30 AM",
-    status: 'in_progress',
-    officer: "Rahul Sharma (Ward 4 Engineer)",
-    location: "Koramangala 4th Block"
-  },
-  {
-    id: "RES-9705",
-    department: "Streetlights",
-    issue: "Pole #4521 dead for 3 weeks.",
-    date: "10 Oct 2026, 08:15 PM",
-    status: 'resolved',
-    officer: "Nitin B. (Electrical Dept)",
-    location: "HSR Layout Sector 2",
-    rating: null
-  }
+  { id: 'Pending', label: 'Pending Review', icon: <Target className="w-5 h-5 text-yellow-600" />, color: 'bg-yellow-100 border-yellow-300 text-yellow-700 font-medium' },
+  { id: 'Assigned', label: 'Official Assigned', icon: <UserCheck className="w-5 h-5 text-blue-600" />, color: 'bg-blue-100 border-blue-300 text-blue-700 font-medium' },
+  { id: 'In Progress', label: 'On-Site Fix', icon: <Wrench className="w-5 h-5 text-indigo-600" />, color: 'bg-indigo-100 border-indigo-300 text-indigo-700 font-medium' },
+  { id: 'Resolved', label: 'Resolved', icon: <CheckCircle2 className="w-5 h-5 text-emerald-600" />, color: 'bg-emerald-100 border-emerald-300 text-emerald-700 font-medium' }
 ];
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState(mockTickets);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [ratingInput, setRatingInput] = useState({}); // { ticketId: number }
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        const data = await api.get('/complaints/my');
+        if (Array.isArray(data)) {
+          setTickets(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user tickets:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTickets();
+  }, []);
 
   const handleRating = (ticketId, stars) => {
     setRatingInput({...ratingInput, [ticketId]: stars});
   };
 
-  const submitRating = (ticketId) => {
-    // API logic to save rating
-    setTickets(tickets.map(t => t.id === ticketId ? {...t, rating: ratingInput[ticketId]} : t));
+  const submitRating = async (ticketId) => {
+    try {
+      // Assuming endpoint exists for rating
+      // await api.put(`/complaints/${ticketId}/rate`, { rating: ratingInput[ticketId] });
+      setTickets(tickets.map(t => t._id === ticketId ? {...t, rating: ratingInput[ticketId]} : t));
+    } catch (err) {
+      console.error('Failed to submit rating:', err);
+    }
   };
 
   const renderStepper = (currentStatus) => {
@@ -53,7 +54,6 @@ const Dashboard = () => {
         <div className="absolute left-0 top-1/2 -mt-[1px] w-full h-[2px] bg-slate-200 z-0"></div>
         {ticketStatuses.map((step, idx) => {
           const isCompleted = idx <= currentIndex;
-          const isLastStatus = idx === ticketStatuses.length - 1;
           const statusColors = isCompleted 
             ? step.color.split(' ')[0] // getting background color
             : 'bg-slate-100';
@@ -76,6 +76,14 @@ const Dashboard = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="w-full h-96 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -92,26 +100,40 @@ const Dashboard = () => {
       </div>
 
       <div className="space-y-6">
-        {tickets.map(ticket => (
-          <div key={ticket.id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row">
+        {tickets.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+               <FileText className="w-10 h-10 text-slate-300" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900">No reports found</h3>
+            <p className="text-slate-500 mt-2 max-w-xs mx-auto font-medium">You haven't filed any reports yet. Start by creating your first civic request.</p>
+            <button 
+                onClick={() => navigate('/file-report')}
+                className="mt-8 text-indigo-600 font-bold uppercase tracking-widest text-[11px] hover:underline"
+            >
+                File Your First Report
+            </button>
+          </div>
+        ) : tickets.map(ticket => (
+          <div key={ticket._id} className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row">
             
             {/* Core Details */}
             <div className="p-6 lg:p-8 flex-1 border-b lg:border-b-0 lg:border-r border-slate-100 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded-md tracking-widest uppercase border border-slate-200">
-                  {ticket.id}
+                  {ticket._id.substring(0, 8)}
                 </span>
                 <span className="text-sm font-semibold text-slate-500 flex items-center gap-1">
-                   <Clock className="w-4 h-4" /> {ticket.date}
+                   <Clock className="w-4 h-4" /> {new Date(ticket.createdAt).toLocaleDateString()}
                 </span>
               </div>
               
               <div>
-                <h3 className="text-xl font-bold text-slate-900 mt-2 mb-1">{ticket.issue}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mt-2 mb-1">{ticket.title}</h3>
                 <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
                    <Target className="w-4 h-4 text-indigo-500" /> {ticket.department}
                    <span className="text-slate-300 mx-1">|</span>
-                   <MapPin className="w-4 h-4 text-rose-500" /> {ticket.location}
+                   <MapPin className="w-4 h-4 text-rose-500" /> {ticket.location?.address}
                 </div>
               </div>
 
@@ -128,10 +150,10 @@ const Dashboard = () => {
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Assigned Officer</p>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold font-serif text-lg">
-                    {ticket.officer.charAt(0)}
+                    {ticket.assignedOfficial?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-800 text-sm">{ticket.officer}</p>
+                    <p className="font-bold text-slate-800 text-sm">{ticket.assignedOfficial || 'Awaiting Assignment'}</p>
                     <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-0.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /> Verified Gov
                     </p>
@@ -141,13 +163,14 @@ const Dashboard = () => {
 
               <div className="flex flex-col gap-2">
                 <button 
-                  onClick={() => navigate(`/chat/${ticket.id}`)}
-                  className="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-colors shadow-sm text-sm"
+                  onClick={() => navigate(`/chat/${ticket._id}`)}
+                  className="w-full flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-colors shadow-sm text-sm disabled:opacity-50"
+                  disabled={!ticket.assignedOfficial}
                 >
                   <MessageSquare className="w-4 h-4" /> Message Officer
                 </button>
                 <button 
-                  onClick={() => navigate(`/ticket/${ticket.id}`)}
+                  onClick={() => navigate(`/ticket/${ticket._id}`)}
                   className="w-full flex justify-center items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-3 rounded-xl font-bold transition-colors shadow-sm text-sm"
                 >
                   <Search className="w-4 h-4" /> View Ticket Deep-Dive
@@ -155,7 +178,7 @@ const Dashboard = () => {
               </div>
 
               {/* Feedback UI if resolved */}
-              {ticket.status === 'resolved' && (
+              {ticket.status === 'Resolved' && (
                 <div className="mt-4 pt-4 border-t border-slate-200 text-center animate-in slide-in-from-top-2 duration-300">
                   {ticket.rating ? (
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2">
@@ -168,14 +191,14 @@ const Dashboard = () => {
                         {[1, 2, 3, 4, 5].map(star => (
                            <Star 
                              key={star}
-                             onClick={() => handleRating(ticket.id, star)}
+                             onClick={() => handleRating(ticket._id, star)}
                              className={`w-7 h-7 cursor-pointer transition-transform hover:scale-110 
-                               ${(ratingInput[ticket.id] || 0) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`}
+                                ${(ratingInput[ticket._id] || 0) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300'}`}
                            />
                         ))}
                       </div>
-                      {ratingInput[ticket.id] && (
-                        <button onClick={() => submitRating(ticket.id)} className="w-full mt-2 bg-slate-900 text-white text-xs py-2 font-bold rounded-lg hover:bg-slate-800 transition-colors">
+                      {ratingInput[ticket._id] && (
+                        <button onClick={() => submitRating(ticket._id)} className="w-full mt-2 bg-slate-900 text-white text-xs py-2 font-bold rounded-lg hover:bg-slate-800 transition-colors">
                           Submit Rating
                         </button>
                       )}

@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { AlertCircle, CheckCircle2, Clock, Users as UsersIcon, ArrowUpRight, TrendingUp, Calendar } from 'lucide-react';
+import { api } from '../services/api';
 
 const timeData = {
   daily: [
@@ -34,8 +35,24 @@ const timeData = {
 const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [isExporting, setIsExporting] = useState(false);
+  const [statsData, setStatsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   
   const currentData = useMemo(() => timeData[timeRange], [timeRange]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await api.get('/complaints/stats');
+        setStatsData(data);
+      } catch (err) {
+        console.error('Failed to fetch stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleExport = () => {
     setIsExporting(true);
@@ -43,13 +60,13 @@ const Dashboard: React.FC = () => {
   };
 
   const stats = [
-    { label: 'Total Reports', value: timeRange === 'daily' ? '86' : timeRange === 'weekly' ? '1,284' : '4,821', change: '+12%', icon: <AlertCircle size={20} className="text-amber-500" />, bg: 'bg-amber-50' },
-    { label: 'Resolved', value: timeRange === 'daily' ? '64' : timeRange === 'weekly' ? '842' : '3,910', change: '+18%', icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: 'bg-emerald-50' },
-    { label: 'Avg. Response', value: '4.2h', change: '-8%', icon: <Clock size={20} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: 'Active Officials', value: '86', change: '+4', icon: <UsersIcon size={20} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+    { label: 'Total Reports', value: statsData?.total?.toString() || '0', change: '+12%', icon: <AlertCircle size={20} className="text-amber-500" />, bg: 'bg-amber-50' },
+    { label: 'Resolved', value: statsData?.resolved?.toString() || '0', change: '+18%', icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: 'bg-emerald-50' },
+    { label: 'Active Issues', value: statsData?.pending?.toString() || '0', change: '-8%', icon: <Clock size={20} className="text-blue-500" />, bg: 'bg-blue-50' },
+    { label: 'In Progress', value: statsData?.inProgress?.toString() || '0', change: '+4', icon: <UsersIcon size={20} className="text-indigo-500" />, bg: 'bg-indigo-50' },
   ];
 
-  const recentActivity = [
+  const recentActivity = statsData?.recentActivity || [
     { type: 'incident', title: 'Power outage reported in Sector 4', time: '12 mins ago', status: 'critical' },
     { type: 'official', title: 'Officer Rajesh assigned to Case #892', time: '45 mins ago', status: 'update' },
     { type: 'resolved', title: 'Water leak in BTM Layout resolved', time: '2 hours ago', status: 'success' },
@@ -195,7 +212,7 @@ const Dashboard: React.FC = () => {
            </div>
            
            <div className="space-y-6">
-              {recentActivity.map((item, idx) => (
+              {recentActivity.map((item: any, idx: number) => (
                  <div key={idx} className="flex items-start gap-5 group/item cursor-pointer">
                     <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 group-hover/item:scale-150 transition-transform ${
                        item.status === 'critical' ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 
