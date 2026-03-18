@@ -6,6 +6,22 @@ const Settings: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // States for interactive settings
+  const [notifications, setNotifications] = useState([
+    { id: 0, title: 'Emergency Broadcasts', desc: 'Critical sector-wide alerts and hazard warnings.', enabled: true },
+    { id: 1, title: 'New Complaints', desc: 'Receive notifications when new incidents are filed in your sector.', enabled: true },
+    { id: 2, title: 'Official Performance', desc: 'Summary reports on staff efficiency and task completion.', enabled: false },
+    { id: 3, title: 'System Updates', desc: 'Information about platform maintenance and new features.', enabled: true },
+  ]);
+  const [twoFactor, setTwoFactor] = useState(true);
+  const [selectedTheme, setSelectedTheme] = useState('Light');
+  const [language, setLanguage] = useState('English (US)');
+  const [timezone, setTimezone] = useState('(GMT+05:30) India Standard Time');
+
+  const toggleNotification = (id: number) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n));
+  };
+
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => {
@@ -34,7 +50,7 @@ const Settings: React.FC = () => {
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Departmental Bio</label>
-                <textarea rows={3} defaultValue="Managing nodal operations for Bangalore South sector." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium resize-none" />
+                <textarea rows={3} defaultValue="Managing nodal operations for Bangalore South sector." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-medium resize-none shadow-inner" />
               </div>
             </div>
           </section>
@@ -46,19 +62,18 @@ const Settings: React.FC = () => {
                <Bell size={20} className="text-rose-500" /> Alert Preferences
             </h3>
             <div className="space-y-4">
-              {[
-                { title: 'Emergency Broadcasts', desc: 'Critical sector-wide alerts and hazard warnings.', enabled: true },
-                { title: 'New Complaints', desc: 'Receive notifications when new incidents are filed in your sector.', enabled: true },
-                { title: 'Official Performance', desc: 'Summary reports on staff efficiency and task completion.', enabled: false },
-                { title: 'System Updates', desc: 'Information about platform maintenance and new features.', enabled: true },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-all group">
+              {notifications.map((item) => (
+                <div 
+                  key={item.id} 
+                  onClick={() => toggleNotification(item.id)}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-3xl border border-slate-100 hover:border-slate-300 hover:bg-white transition-all group cursor-pointer"
+                >
                    <div>
                       <p className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{item.title}</p>
                       <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
                    </div>
-                   <div className={`w-12 h-6 rounded-full relative p-1 transition-colors cursor-pointer ${item.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                      <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${item.enabled ? 'right-1' : 'left-1'}`}></div>
+                   <div className={`w-12 h-6 rounded-full relative p-1 transition-all duration-300 ${item.enabled ? 'bg-emerald-500 shadow-lg shadow-emerald-100' : 'bg-slate-300'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full absolute transition-all duration-300 shadow-sm ${item.enabled ? 'right-1' : 'left-1'}`}></div>
                    </div>
                 </div>
               ))}
@@ -73,22 +88,27 @@ const Settings: React.FC = () => {
                   <Key size={20} className="text-amber-500" /> Authentication & Privacy
                </h3>
                <div className="space-y-4">
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                  <div 
+                    onClick={() => setTwoFactor(!twoFactor)}
+                    className="p-5 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between hover:border-emerald-200 hover:bg-emerald-50/10 transition-all cursor-pointer group"
+                  >
                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-white rounded-xl shadow-sm"><Shield size={18} className="text-emerald-500" /></div>
+                        <div className="p-3 bg-white rounded-2xl shadow-sm"><Shield size={20} className={`${twoFactor ? 'text-emerald-500' : 'text-slate-300'} transition-colors`} /></div>
                         <div>
                            <p className="text-sm font-bold text-slate-900">Two-Factor Authentication</p>
-                           <p className="text-xs text-slate-500">Secured via official biometric key.</p>
+                           <p className="text-xs text-slate-500 mt-1 font-medium">Secured via official biometric key.</p>
                         </div>
                      </div>
-                     <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full border border-emerald-100 uppercase tracking-widest">Enabled</span>
+                     <div className={`w-12 h-6 rounded-full relative p-1 transition-all duration-300 ${twoFactor ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                        <div className={`w-4 h-4 bg-white rounded-full absolute transition-all duration-300 shadow-sm ${twoFactor ? 'right-1' : 'left-1'}`}></div>
+                     </div>
                   </div>
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group cursor-pointer hover:bg-white transition-all">
+                  <div className="p-5 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between group cursor-pointer hover:bg-white transition-all shadow-sm hover:shadow-md">
                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-white rounded-xl shadow-sm"><Key size={18} className="text-slate-400 group-hover:text-amber-500 transition-colors" /></div>
+                        <div className="p-3 bg-white rounded-2xl shadow-sm"><Key size={20} className="text-slate-400 group-hover:text-amber-500 transition-colors" /></div>
                         <div>
                            <p className="text-sm font-bold text-slate-900">Change Password</p>
-                           <p className="text-xs text-slate-500">Last changed 42 days ago.</p>
+                           <p className="text-xs text-slate-500 mt-1 font-medium">Last changed 42 days ago.</p>
                         </div>
                      </div>
                      <ArrowUpRight size={18} className="text-slate-300 group-hover:text-slate-900 transition-all" />
@@ -97,21 +117,21 @@ const Settings: React.FC = () => {
             </div>
 
             <div>
-               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-1">Active Sessions</h4>
+               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 ml-2">Active Sessions</h4>
                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 border border-slate-100 rounded-2xl">
-                     <div className="flex items-center gap-3">
-                        <Monitor size={18} className="text-slate-400" />
+                  <div className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white transition-all">
+                     <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white rounded-2xl shadow-sm"><Monitor size={20} className="text-indigo-400" /></div>
                         <div>
-                           <p className="text-xs font-bold text-slate-900">Chrome on MacOS • Bangalore, IN</p>
-                           <p className="text-[10px] text-emerald-500 font-bold uppercase">Current Session</p>
+                           <p className="text-sm font-bold text-slate-900">Chrome on MacOS • Bangalore, IN</p>
+                           <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider mt-0.5">Current Session</p>
                         </div>
                      </div>
-                     <button className="text-[10px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-widest">Logout</button>
+                     <button className="px-4 py-2 text-[10px] font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all uppercase tracking-widest">Logout</button>
                   </div>
                </div>
-               <button className="mt-6 flex items-center gap-2 text-rose-500 text-[10px] font-bold uppercase tracking-widest hover:text-rose-600 transition-colors ml-1">
-                  <Trash2 size={14} /> Revoke all active sessions
+               <button className="mt-6 flex items-center gap-2 text-rose-500 text-[10px] font-bold uppercase tracking-widest hover:text-rose-600 transition-all ml-2 group">
+                  <Trash2 size={14} className="group-hover:rotate-12 transition-transform" /> Revoke all active sessions
                </button>
             </div>
           </section>
@@ -122,21 +142,30 @@ const Settings: React.FC = () => {
             <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                <Monitor size={20} className="text-blue-500" /> Interface Customization
             </h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                {['Light', 'Dark', 'System'].map((theme) => (
-                  <div key={theme} className={`p-4 rounded-3xl border-2 transition-all cursor-pointer text-center ${theme === 'Light' ? 'border-slate-900 bg-slate-50' : 'border-slate-100 hover:border-slate-200'}`}>
-                     <div className={`w-full aspect-video rounded-xl mb-3 ${theme === 'Dark' ? 'bg-slate-900' : theme === 'System' ? 'bg-gradient-to-r from-white to-slate-900' : 'bg-white shadow-inner'}`}></div>
-                     <p className="text-xs font-bold text-slate-900">{theme}</p>
+                  <div 
+                    key={theme} 
+                    onClick={() => setSelectedTheme(theme)}
+                    className={`p-5 rounded-[2rem] border-2 transition-all cursor-pointer text-center group ${selectedTheme === theme ? 'border-slate-900 bg-slate-50 shadow-xl' : 'border-slate-100 hover:border-slate-200 bg-white hover:shadow-md'}`}
+                  >
+                     <div className={`w-full aspect-square sm:aspect-video rounded-2xl mb-4 transition-transform group-hover:scale-95 duration-500 ${theme === 'Dark' ? 'bg-slate-900' : theme === 'System' ? 'bg-gradient-to-br from-white via-slate-200 to-slate-900' : 'bg-white shadow-inner border border-slate-50'}`}></div>
+                     <p className={`text-sm font-bold ${selectedTheme === theme ? 'text-slate-900' : 'text-slate-400 group-hover:text-slate-600'}`}>{theme}</p>
+                     {selectedTheme === theme && (
+                       <div className="mt-2 flex justify-center">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-900"></div>
+                       </div>
+                     )}
                   </div>
                ))}
             </div>
-            <div className="mt-8 pt-8 border-t border-slate-50">
-               <div className="flex items-center justify-between">
+            <div className="mt-10 pt-8 border-t border-slate-100">
+               <div className="flex items-center justify-between p-5 bg-slate-50 rounded-[2rem]">
                   <div>
                      <p className="text-sm font-bold text-slate-900">Compact Mode</p>
-                     <p className="text-xs text-slate-500 mt-1">Maximize data density in tables and lists.</p>
+                     <p className="text-xs text-slate-500 mt-1 font-medium">Maximize data density in tables and lists.</p>
                   </div>
-                  <div className="w-12 h-6 bg-slate-200 rounded-full relative p-1 shadow-inner cursor-not-allowed">
+                  <div className="w-12 h-6 bg-slate-200 rounded-full relative p-1 shadow-inner cursor-not-allowed opacity-50">
                      <div className="w-4 h-4 bg-white rounded-full absolute left-1"></div>
                   </div>
                </div>
@@ -149,21 +178,41 @@ const Settings: React.FC = () => {
             <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                <Globe size={20} className="text-teal-500" /> Regional Settings
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Preferred Language</label>
-                <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-bold text-slate-700 appearance-none">
-                  <option>English (US)</option>
-                  <option>Kannada</option>
-                  <option>Hindi</option>
-                </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">Preferred Language</label>
+                <div className="relative group">
+                  <select 
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-teal-500/5 focus:border-teal-500 transition-all outline-none font-bold text-slate-800 appearance-none shadow-sm group-hover:shadow-md"
+                  >
+                    <option>English (US)</option>
+                    <option>Kannada</option>
+                    <option>Hindi</option>
+                    <option>Spanish</option>
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-teal-500 transition-colors">
+                     <ArrowUpRight size={16} className="rotate-90" />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Timezone</label>
-                <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none font-bold text-slate-700 appearance-none">
-                  <option>(GMT+05:30) India Standard Time</option>
-                  <option>(GMT+00:00) UTC</option>
-                </select>
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-2">Timezone</label>
+                <div className="relative group">
+                  <select 
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-teal-500/5 focus:border-teal-500 transition-all outline-none font-bold text-slate-800 appearance-none shadow-sm group-hover:shadow-md"
+                  >
+                    <option>(GMT+05:30) India Standard Time</option>
+                    <option>(GMT+00:00) UTC Standard Time</option>
+                    <option>(GMT-08:00) Pacific Standard Time</option>
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-teal-500 transition-colors">
+                     <ArrowUpRight size={16} className="rotate-90" />
+                  </div>
+                </div>
               </div>
             </div>
           </section>

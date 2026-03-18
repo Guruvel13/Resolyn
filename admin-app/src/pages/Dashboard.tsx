@@ -33,8 +33,14 @@ const timeData = {
 
 const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [isExporting, setIsExporting] = useState(false);
   
   const currentData = useMemo(() => timeData[timeRange], [timeRange]);
+
+  const handleExport = () => {
+    setIsExporting(true);
+    setTimeout(() => setIsExporting(false), 1500);
+  };
 
   const stats = [
     { label: 'Total Reports', value: timeRange === 'daily' ? '86' : timeRange === 'weekly' ? '1,284' : '4,821', change: '+12%', icon: <AlertCircle size={20} className="text-amber-500" />, bg: 'bg-amber-50' },
@@ -43,16 +49,23 @@ const Dashboard: React.FC = () => {
     { label: 'Active Officials', value: '86', change: '+4', icon: <UsersIcon size={20} className="text-indigo-500" />, bg: 'bg-indigo-50' },
   ];
 
+  const recentActivity = [
+    { type: 'incident', title: 'Power outage reported in Sector 4', time: '12 mins ago', status: 'critical' },
+    { type: 'official', title: 'Officer Rajesh assigned to Case #892', time: '45 mins ago', status: 'update' },
+    { type: 'resolved', title: 'Water leak in BTM Layout resolved', time: '2 hours ago', status: 'success' },
+    { type: 'system', title: 'Satellite Telemetry stream synchronized', time: '4 hours ago', status: 'info' }
+  ];
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 border border-slate-100 shadow-2xl rounded-2xl">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">{label}</p>
+        <div className="bg-white/95 backdrop-blur-md p-5 border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.1)] rounded-[1.5rem] animate-in zoom-in-95 duration-300">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">{label} SEGMENT</p>
           {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-3 py-1">
-              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
-              <p className="text-sm font-bold text-slate-900 capitalize">
-                {entry.name}: <span className="ml-1 text-slate-500 font-medium">{entry.value}</span>
+            <div key={index} className="flex items-center gap-4 py-1.5 first:pt-0">
+              <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.color }}></div>
+              <p className="text-xs font-bold text-slate-900 tracking-tight">
+                {entry.name.toUpperCase()}: <span className="ml-2 text-slate-500 font-mono">{entry.value}</span>
               </p>
             </div>
           ))}
@@ -63,93 +76,143 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Infrastructure Overview</h1>
-          <p className="text-slate-500 mt-1">Real-time monitoring of civic reports and resolutions.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
+          <p className="text-slate-400 mt-2 font-medium flex items-center gap-2">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+             Active Intelligence Stream • Sector Alpha-9 Bangalore
+          </p>
         </div>
-        <div className="bg-white p-1 rounded-xl border border-slate-200 flex shadow-sm">
-           {(['daily', 'weekly', 'monthly'] as const).map((range) => (
-             <button 
-               key={range}
-               onClick={() => setTimeRange(range)}
-               className={`px-4 py-1.5 text-xs font-bold capitalize rounded-lg transition-all ${
-                 timeRange === range ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'
-               }`}
-             >
-               {range}
-             </button>
-           ))}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="bg-white p-1.5 rounded-[1.25rem] border border-slate-100 flex shadow-sm">
+             {(['daily', 'weekly', 'monthly'] as const).map((range) => (
+               <button 
+                 key={range}
+                 onClick={() => setTimeRange(range)}
+                 className={`px-5 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all active:scale-95 ${
+                   timeRange === range ? 'bg-slate-900 text-white shadow-xl shadow-slate-200' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
+                 }`}
+               >
+                 {range}
+               </button>
+             ))}
+          </div>
+          <button 
+            onClick={handleExport}
+            className={`flex items-center gap-2 px-5 py-3.5 bg-white border border-slate-100 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-slate-900 shadow-sm transition-all active:scale-95 ${isExporting ? 'opacity-70 cursor-wait' : 'hover:bg-slate-50 hover:shadow-lg'}`}
+          >
+            {isExporting ? (
+              <div className="w-3.5 h-3.5 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin"></div>
+            ) : <Calendar size={16} />}
+            {isExporting ? 'GENERATING...' : 'EXPORT LOGS'}
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-2.5 rounded-2xl ${stat.bg}`}>{stat.icon}</div>
-              <span className={`text-xs font-bold px-2 py-1 rounded-lg ${stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+          <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-slate-100 transition-all group cursor-default">
+            <div className="flex items-center justify-between mb-6">
+              <div className={`w-12 h-12 rounded-2xl ${stat.bg} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>{stat.icon}</div>
+              <span className={`text-[10px] font-bold px-2 py-1.5 rounded-xl border ${stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
                 {stat.change}
               </span>
             </div>
-            <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-            <h3 className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+            <h3 className="text-3xl font-extrabold text-slate-900 tracking-tighter">{stat.value}</h3>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-bold text-slate-900">Incident Frequency</h3>
-            <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1">
-              View Analytics <ArrowUpRight size={14} />
-            </button>
-          </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={currentData}>
-                <defs>
-                  <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }} />
-                <Area type="monotone" dataKey="reports" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorReports)" animationDuration={1000} />
-              </AreaChart>
-            </ResponsiveContainer>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-10 opacity-[0.03] -rotate-12 translate-x-4">
+                 <TrendingUp size={120} className="text-indigo-600" />
+              </div>
+              <div className="flex items-center justify-between mb-10 relative z-10">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight uppercase">Incident Velocity</h3>
+                <button className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-2 tracking-widest bg-indigo-50 px-3 py-1.5 rounded-xl transition-all group-hover:px-4">
+                  ANALYTICS <ArrowUpRight size={14} />
+                </button>
+              </div>
+              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={currentData}>
+                    <defs>
+                      <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={15} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-15} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1.5, strokeDasharray: '6 6' }} />
+                    <Area type="monotone" dataKey="reports" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorReports)" animationDuration={1500} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm relative group overflow-hidden">
+              <div className="flex items-center justify-between mb-10 relative z-10">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight uppercase">Resolution Quota</h3>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 tracking-widest">
+                  <TrendingUp size={14} /> PEAK PERFORMANCE
+                </div>
+              </div>
+              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={currentData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={15} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-15} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
+                    <Bar 
+                      dataKey="resolved" 
+                      fill="#0f172a" 
+                      radius={[10, 10, 0, 0]} 
+                      barSize={timeRange === 'daily' ? 40 : timeRange === 'weekly' ? 30 : 20} 
+                      animationDuration={1500}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="font-bold text-slate-900">Resolution Performance</h3>
-            <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
-              <TrendingUp size={14} /> High Efficiency
-            </div>
-          </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={currentData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dx={-10} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                <Bar 
-                  dataKey="resolved" 
-                  fill="#0f172a" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={timeRange === 'daily' ? 32 : timeRange === 'weekly' ? 24 : 16} 
-                  animationDuration={1000}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col group">
+           <div className="flex items-center justify-between mb-8">
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight uppercase">Activity Stream</h3>
+              <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all duration-500 cursor-pointer">
+                 <ArrowUpRight size={18} />
+              </div>
+           </div>
+           
+           <div className="space-y-6">
+              {recentActivity.map((item, idx) => (
+                 <div key={idx} className="flex items-start gap-5 group/item cursor-pointer">
+                    <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 group-hover/item:scale-150 transition-transform ${
+                       item.status === 'critical' ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 
+                       item.status === 'success' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 
+                       item.status === 'update' ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]' : 'bg-slate-300 shadow-sm'
+                    }`}></div>
+                    <div className="space-y-1 pb-6 border-b border-slate-50 last:border-0 w-full group-hover/item:border-slate-100 transition-colors">
+                       <p className="text-xs font-bold text-slate-900 line-clamp-1 tracking-tight group-hover/item:text-indigo-600 transition-colors">{item.title}</p>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.time}</p>
+                    </div>
+                 </div>
+              ))}
+           </div>
+           
+           <button className="w-full mt-auto py-5 bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] rounded-2xl hover:bg-slate-900 hover:text-white transition-all duration-500 border border-transparent active:scale-95">
+              Access Full Feed Logs
+           </button>
         </div>
       </div>
     </div>
