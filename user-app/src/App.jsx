@@ -9,6 +9,8 @@ import ProfileSettings from './pages/ProfileSettings';
 import TicketDetails from './pages/TicketDetails';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 
 function App() {
   return (
@@ -23,6 +25,13 @@ function App() {
           <Route path="chat/:id" element={<ChatInterface />} />
           <Route path="profile" element={<ProfileSettings />} />
         </Route>
+        <Route path="file-report" element={<ComplaintForm />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="ticket/:id" element={<TicketDetails />} />
+        <Route path="chat/:id" element={<ChatInterface />} />
+        <Route path="profile" element={<ProfileSettings />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
       </Route>
     </Routes>
   );
