@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import ChatInterface from './pages/ChatInterface';
 import ProfileSettings from './pages/ProfileSettings';
 import TicketDetails from './pages/TicketDetails';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Route path="ticket/:id" element={<TicketDetails />} />
         <Route path="chat/:id" element={<ChatInterface />} />
         <Route path="profile" element={<ProfileSettings />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
       </Route>
     </Routes>
   );
