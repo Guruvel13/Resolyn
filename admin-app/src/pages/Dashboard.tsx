@@ -97,10 +97,10 @@ const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
-          <p className="text-slate-400 mt-2 font-medium flex items-center gap-2">
+          <div className="text-slate-400 mt-2 font-medium flex items-center gap-2">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
              Active Intelligence Stream • Sector Alpha-9 Bangalore
-          </p>
+          </div>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="bg-white p-1.5 rounded-[1.25rem] border border-slate-100 flex shadow-sm">
@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
                   ANALYTICS <ArrowUpRight size={14} />
                 </button>
               </div>
-              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02]">
+              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02] min-h-[18rem]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={currentData}>
                     <defs>
@@ -182,7 +182,7 @@ const Dashboard: React.FC = () => {
                   <TrendingUp size={14} /> PEAK PERFORMANCE
                 </div>
               </div>
-              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02]">
+              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02] min-h-[18rem]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={currentData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
