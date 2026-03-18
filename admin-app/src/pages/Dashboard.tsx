@@ -1,45 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { AlertCircle, CheckCircle2, Clock, Users as UsersIcon, ArrowUpRight, TrendingUp, Calendar } from 'lucide-react';
-import { api } from '../services/api';
-
-const timeData = {
-  daily: [
-    { name: '08:00', reports: 4, resolved: 2 },
-    { name: '10:00', reports: 12, resolved: 5 },
-    { name: '12:00', reports: 18, resolved: 14 },
-    { name: '14:00', reports: 22, resolved: 19 },
-    { name: '16:00', reports: 15, resolved: 12 },
-    { name: '18:00', reports: 10, resolved: 8 },
-    { name: '20:00', reports: 5, resolved: 4 },
-  ],
-  weekly: [
-    { name: 'Mon', reports: 40, resolved: 24 },
-    { name: 'Tue', reports: 30, resolved: 13 },
-    { name: 'Wed', reports: 20, resolved: 98 },
-    { name: 'Thu', reports: 27, resolved: 39 },
-    { name: 'Fri', reports: 18, resolved: 48 },
-    { name: 'Sat', reports: 23, resolved: 38 },
-    { name: 'Sun', reports: 34, resolved: 43 },
-  ],
-  monthly: [
-    { name: 'Jan', reports: 400, resolved: 240 },
-    { name: 'Feb', reports: 300, resolved: 210 },
-    { name: 'Mar', reports: 520, resolved: 480 },
-    { name: 'Apr', reports: 450, resolved: 390 },
-    { name: 'May', reports: 600, resolved: 550 },
-    { name: 'Jun', reports: 550, resolved: 520 },
-  ]
-};
-
-const Dashboard: React.FC = () => {
-  const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
-  const [isExporting, setIsExporting] = useState(false);
-  const [statsData, setStatsData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  
-  const currentData = useMemo(() => timeData[timeRange], [timeRange]);
-import React, { useState, useMemo } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -52,10 +11,7 @@ import {
   Area, 
   PieChart, 
   Pie, 
-  Cell,
-  LineChart,
-  Line,
-  Legend
+  Cell
 } from 'recharts';
 import { 
   AlertCircle, 
@@ -87,17 +43,9 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../services/api';
 
-// --- MOCK DATA ---
-const kpiData = [
-  { label: 'Total Complaints', value: '1,482', change: '+12%', icon: <Activity size={18} />, color: '#6366f1', trend: 'up' },
-  { label: 'Resolved Complaints', value: '1,120', change: '+18%', icon: <CheckCircle2 size={18} />, color: '#10b981', trend: 'up' },
-  { label: 'Pending Complaints', value: '362', change: '-5%', icon: <Clock size={18} />, color: '#f59e0b', trend: 'down' },
-  { label: 'Avg. Resolution Time', value: '2.4 Days', change: '-12%', icon: <Timer size={18} />, color: '#8b5cf6', trend: 'down' },
-  { label: 'Overdue Complaints', value: '42', change: '+4', icon: <AlertTriangle size={18} />, color: '#ef4444', trend: 'up' },
-  { label: 'Today (New)', value: '28', change: '+8%', icon: <ShieldCheck size={18} />, color: '#3b82f6', trend: 'up' },
-];
-
+// --- MOCK DATA FOR CHARTS (until backend provides them) ---
 const trendData = [
   { name: 'Mon', new: 45, resolved: 38 },
   { name: 'Tue', new: 52, resolved: 45 },
@@ -116,25 +64,13 @@ const departmentWorkload = [
   { name: 'Public Health', count: 140, time: 2.2 },
 ];
 
-const statusData = [
-  { name: 'Resolved', value: 1120, color: '#10b981' },
-  { name: 'In Progress', value: 240, color: '#6366f1' },
-  { name: 'Pending', value: 122, color: '#f59e0b' },
-];
-
 const priorityData = [
   { name: 'High', value: 280, color: '#ef4444' },
   { name: 'Medium', value: 650, color: '#f59e0b' },
   { name: 'Low', value: 552, color: '#10b981' },
 ];
 
-const leaderboard = [
-  { rank: 1, name: 'Electricity', time: '1.2 Days', rate: '98%', color: 'indigo' },
-  { rank: 2, name: 'Sanitation', time: '1.8 Days', rate: '94%', color: 'emerald' },
-  { rank: 3, name: 'Public Health', time: '2.2 Days', rate: '91%', color: 'blue' },
-];
-
-const recentComplaints = [
+const recentComplaintsMock = [
   { id: 'RES-9012', dept: 'Electrical', status: 'In Progress', priority: 'High', date: '2024-03-18', timestamp: Date.now() - 3600000, time: '-' },
   { id: 'RES-8945', dept: 'Water & Supply', status: 'Resolved', priority: 'Medium', date: '2024-03-17', timestamp: Date.now() - 86400000, time: '2.4 Days' },
   { id: 'RES-8821', dept: 'Roads', status: 'Pending', priority: 'High', date: '2024-03-18', timestamp: Date.now() - 172800000, time: '-' },
@@ -143,6 +79,8 @@ const recentComplaints = [
 ];
 
 const Dashboard: React.FC = () => {
+  const [statsData, setStatsData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [filterDept, setFilterDept] = useState('All Departments');
   const [filterStatus, setFilterStatus] = useState('All Status');
   const [filterDate, setFilterDate] = useState('Last 7 Days');
@@ -153,27 +91,6 @@ const Dashboard: React.FC = () => {
   const departments = ['All Departments', 'Water & Supply', 'Electrical', 'Sanitation', 'Roads', 'Public Health'];
   const statuses = ['All Status', 'Resolved', 'In Progress', 'Pending', 'Overdue'];
   const dates = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'All Time'];
-
-  const filteredRecentComplaints = useMemo(() => {
-    return recentComplaints.filter(item => {
-      const matchesDept = filterDept === 'All Departments' || item.dept === filterDept;
-      const matchesStatus = filterStatus === 'All Status' || item.status === filterStatus;
-      
-      // Date logic with buffer and fallback
-      let matchesDate = true;
-      if (item.timestamp) {
-        const now = Date.now();
-        const hourBuffer = 60 * 60 * 1000; // 1 hour buffer for execution delay
-        if (filterDate === 'Last 24 Hours') matchesDate = (now - item.timestamp) <= (24 * 60 * 60 * 1000 + hourBuffer);
-        else if (filterDate === 'Last 7 Days') matchesDate = (now - item.timestamp) <= (7 * 24 * 60 * 60 * 1000 + hourBuffer);
-        else if (filterDate === 'Last 30 Days') matchesDate = (now - item.timestamp) <= (30 * 24 * 60 * 60 * 1000 + hourBuffer);
-      }
-
-      const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            item.dept.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesDept && matchesStatus && matchesSearch && matchesDate;
-    });
-  }, [filterDept, filterStatus, filterDate, searchTerm]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -189,6 +106,60 @@ const Dashboard: React.FC = () => {
     fetchStats();
   }, []);
 
+  const kpiData = useMemo(() => {
+    if (!statsData) return [
+      { label: 'Total Complaints', value: '1,482', change: '+12%', icon: <Activity size={18} />, color: '#6366f1', trend: 'up' },
+      { label: 'Resolved Complaints', value: '1,120', change: '+18%', icon: <CheckCircle2 size={18} />, color: '#10b981', trend: 'up' },
+      { label: 'Pending Complaints', value: '362', change: '-5%', icon: <Clock size={18} />, color: '#f59e0b', trend: 'down' },
+      { label: 'Avg. Resolution Time', value: '2.4 Days', change: '-12%', icon: <Timer size={18} />, color: '#8b5cf6', trend: 'down' },
+      { label: 'Overdue Complaints', value: '42', change: '+4', icon: <AlertTriangle size={18} />, color: '#ef4444', trend: 'up' },
+      { label: 'Today (New)', value: '28', change: '+8%', icon: <ShieldCheck size={18} />, color: '#3b82f6', trend: 'up' },
+    ];
+
+    return [
+      { label: 'Total Reports', value: statsData.total?.toString() || '0', change: '+12%', icon: <Activity size={18} />, color: '#6366f1', trend: 'up' },
+      { label: 'Resolved Cases', value: statsData.resolved?.toString() || '0', change: '+18%', icon: <CheckCircle2 size={18} />, color: '#10b981', trend: 'up' },
+      { label: 'Pending Issues', value: statsData.pending?.toString() || '0', change: '-5%', icon: <Clock size={18} />, color: '#f59e0b', trend: 'down' },
+      { label: 'In Progress', value: statsData.inProgress?.toString() || '0', change: '+4', icon: <History size={18} />, color: '#8b5cf6', trend: 'up' },
+      { label: 'Health Score', value: '94%', change: '+2%', icon: <Smile size={18} />, color: '#3b82f6', trend: 'up' },
+      { label: 'Efficiency', value: '2.4d', change: '-12%', icon: <Timer size={18} />, color: '#6366f1', trend: 'down' },
+    ];
+  }, [statsData]);
+
+  const filteredRecentComplaints = useMemo(() => {
+    // Combine mock data with real activity if possible, or just use mock for now for the detailed table
+    return recentComplaintsMock.filter(item => {
+      const matchesDept = filterDept === 'All Departments' || item.dept === filterDept;
+      const matchesStatus = filterStatus === 'All Status' || item.status === filterStatus;
+      
+      let matchesDate = true;
+      if (item.timestamp) {
+        const now = Date.now();
+        const hourBuffer = 60 * 60 * 1000;
+        if (filterDate === 'Last 24 Hours') matchesDate = (now - item.timestamp) <= (24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 7 Days') matchesDate = (now - item.timestamp) <= (7 * 24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 30 Days') matchesDate = (now - item.timestamp) <= (30 * 24 * 60 * 60 * 1000 + hourBuffer);
+      }
+
+      const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            item.dept.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesDept && matchesStatus && matchesSearch && matchesDate;
+    });
+  }, [filterDept, filterStatus, filterDate, searchTerm]);
+
+  const statusData = useMemo(() => {
+    if (!statsData) return [
+      { name: 'Resolved', value: 1120, color: '#10b981' },
+      { name: 'In Progress', value: 240, color: '#6366f1' },
+      { name: 'Pending', value: 122, color: '#f59e0b' },
+    ];
+    return [
+      { name: 'Resolved', value: statsData.resolved || 0, color: '#10b981' },
+      { name: 'In Progress', value: statsData.inProgress || 0, color: '#6366f1' },
+      { name: 'Pending', value: statsData.pending || 0, color: '#f59e0b' },
+    ];
+  }, [statsData]);
+
   const handleExport = () => {
     const headers = ['ID', 'Department', 'Status', 'Priority', 'Date', 'Resolution Time'];
     const csvRows = [
@@ -203,48 +174,6 @@ const Dashboard: React.FC = () => {
       ].join(','))
     ];
 
-  const stats = [
-    { label: 'Total Reports', value: statsData?.total?.toString() || '0', change: '+12%', icon: <AlertCircle size={20} className="text-amber-500" />, bg: 'bg-amber-50' },
-    { label: 'Resolved', value: statsData?.resolved?.toString() || '0', change: '+18%', icon: <CheckCircle2 size={20} className="text-emerald-500" />, bg: 'bg-emerald-50' },
-    { label: 'Active Issues', value: statsData?.pending?.toString() || '0', change: '-8%', icon: <Clock size={20} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: 'In Progress', value: statsData?.inProgress?.toString() || '0', change: '+4', icon: <UsersIcon size={20} className="text-indigo-500" />, bg: 'bg-indigo-50' },
-  ];
-
-  const recentActivity = statsData?.recentActivity || [
-    { type: 'incident', title: 'Power outage reported in Sector 4', time: '12 mins ago', status: 'critical' },
-    { type: 'official', title: 'Officer Rajesh assigned to Case #892', time: '45 mins ago', status: 'update' },
-    { type: 'resolved', title: 'Water leak in BTM Layout resolved', time: '2 hours ago', status: 'success' },
-    { type: 'system', title: 'Satellite Telemetry stream synchronized', time: '4 hours ago', status: 'info' }
-  ];
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/95 backdrop-blur-md p-5 border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.1)] rounded-[1.5rem] animate-in zoom-in-95 duration-300">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">{label} SEGMENT</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-4 py-1.5 first:pt-0">
-              <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: entry.color }}></div>
-              <p className="text-xs font-bold text-slate-900 tracking-tight">
-                {entry.name.toUpperCase()}: <span className="ml-2 text-slate-500 font-mono">{entry.value}</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Command Center</h1>
-          <div className="text-slate-400 mt-2 font-medium flex items-center gap-2">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-             Active Intelligence Stream • Sector Alpha-9 Bangalore
-          </div>
     const csvString = csvRows.join('\n');
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
@@ -252,6 +181,25 @@ const Dashboard: React.FC = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `executive_summary_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/95 backdrop-blur-md p-4 border border-slate-100 shadow-xl rounded-2xl animate-in zoom-in-95 duration-300">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-50 pb-2">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center gap-3 py-1">
+              <div className="w-2 h-2 rounded-full shadow-sm" style={{ backgroundColor: entry.color }}></div>
+              <p className="text-xs font-bold text-slate-900">
+                {entry.name}: <span className="ml-2 text-indigo-600">{entry.value}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   return (
@@ -392,7 +340,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. KPI CARDS (Instant Overview) */}
+      {/* 2. KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
         {kpiData.map((kpi, i) => (
           <motion.div 
@@ -416,7 +364,7 @@ const Dashboard: React.FC = () => {
             
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 leading-none">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-[#0f172a] tracking-tight">{kpi.value}</h3>
+              <h3 className="text-2xl font-black text-[#0f172a] tracking-tight">{loading ? '...' : kpi.value}</h3>
             </div>
 
             <div 
@@ -427,10 +375,10 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* 3. MAIN ANALYTICS (Charts) */}
+      {/* 3. MAIN ANALYTICS */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
-        {/* A. Complaint Trends (Line Chart) */}
+        {/* A. Resolution Velocity */}
         <div className="xl:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -442,22 +390,6 @@ const Dashboard: React.FC = () => {
                 <div className="w-2.5 h-2.5 rounded-full bg-indigo-600"></div>
                 <span className="text-[10px] font-black text-slate-500 uppercase">Incoming</span>
               </div>
-              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02] min-h-[18rem]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={currentData}>
-                    <defs>
-                      <linearGradient id="colorReports" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15}/>
-                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={15} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-15} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#6366f1', strokeWidth: 1.5, strokeDasharray: '6 6' }} />
-                    <Area type="monotone" dataKey="reports" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#colorReports)" animationDuration={1500} />
-                  </AreaChart>
-                </ResponsiveContainer>
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
                 <span className="text-[10px] font-black text-slate-500 uppercase">Resolved</span>
@@ -481,7 +413,7 @@ const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-10} />
-                <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 40px rgba(0,0,0,0.05)', fontSize: '11px', fontWeight: 'bold' }} />
+                <Tooltip content={<CustomTooltip />} />
                 <Area type="monotone" dataKey="new" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorNew)" />
                 <Area type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRes)" />
               </AreaChart>
@@ -489,7 +421,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* B. Status Distribution (Pie Chart) */}
+        {/* B. System Health */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
           <div className="mb-8">
             <h3 className="text-xl font-black text-slate-900 tracking-tight">System Health</h3>
@@ -513,12 +445,12 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total</p>
-               <p className="text-2xl font-black text-slate-900 leading-none">1,482</p>
+               <p className="text-2xl font-black text-slate-900 leading-none">{loading ? '...' : statsData?.total || '1,482'}</p>
             </div>
           </div>
 
@@ -526,33 +458,18 @@ const Dashboard: React.FC = () => {
             {statusData.map((item, i) => (
               <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
                   <span className="text-xs font-bold text-slate-600">{item.name}</span>
                 </div>
-                <span className="text-xs font-black text-slate-900">{((item.value/1482)*100).toFixed(0)}%</span>
-              </div>
-              <div className="h-72 w-full relative z-10 transition-transform duration-700 group-hover:scale-[1.02] min-h-[18rem]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={currentData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={15} />
-                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-15} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
-                    <Bar 
-                      dataKey="resolved" 
-                      fill="#0f172a" 
-                      radius={[10, 10, 0, 0]} 
-                      barSize={timeRange === 'daily' ? 40 : timeRange === 'weekly' ? 30 : 20} 
-                      animationDuration={1500}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <span className="text-xs font-black text-slate-900">
+                  {loading ? '...' : (item.value && statsData?.total ? ((item.value/statsData.total)*100).toFixed(0) : '0')}%
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* C. Workload & Performance (Bar Charts) */}
+        {/* C. Divisional Load */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -570,13 +487,14 @@ const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} width={80} />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="count" fill="#6366f1" radius={[0, 10, 10, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* D. Resolution Efficiency */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm group">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -594,13 +512,14 @@ const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} dx={-10} />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="time" fill="#f59e0b" radius={[10, 10, 0, 0]} barSize={30} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* E. Priority Matrix */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="mb-8">
             <h3 className="text-xl font-black text-slate-900 tracking-tight">Priority Matrix</h3>
@@ -622,7 +541,7 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -638,11 +557,45 @@ const Dashboard: React.FC = () => {
 
       </div>
 
-      {/* 4. OPERATIONAL FEED TABLE */}
-      <div className="grid grid-cols-1 gap-8">
+      {/* 4. RECENT ACTIVITY (FEED) AND OPERATIONS TABLE */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Modern Table */}
-        <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+        {/* Activity Feed (New from Main) */}
+        <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+           <div className="flex items-center justify-between mb-8">
+              <div>
+                 <h3 className="text-xl font-black text-slate-900 tracking-tight">Live Intelligence</h3>
+                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time system events</p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                 <History size={18} />
+              </div>
+           </div>
+
+           <div className="space-y-6">
+              {(statsData?.recentActivity || [
+                { type: 'incident', title: 'Power outage reported in Sector 4', time: '12 mins ago', status: 'critical' },
+                { type: 'official', title: 'Officer Rajesh assigned to Case #892', time: '45 mins ago', status: 'update' },
+                { type: 'resolved', title: 'Water leak in BTM Layout resolved', time: '2 hours ago', status: 'success' },
+                { type: 'system', title: 'Satellite Telemetry stream synchronized', time: '4 hours ago', status: 'info' }
+              ]).map((item: any, idx: number) => (
+                 <div key={idx} className="flex items-start gap-4 group/item cursor-pointer">
+                    <div className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${
+                       item.status === 'critical' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.4)]' : 
+                       item.status === 'success' ? 'bg-emerald-500' : 
+                       item.status === 'update' ? 'bg-indigo-500' : 'bg-slate-300'
+                    }`}></div>
+                    <div className="space-y-1 pb-6 border-b border-slate-50 last:border-0 w-full">
+                       <p className="text-xs font-bold text-slate-900 group-hover/item:text-indigo-600 transition-colors">{item.title}</p>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.time}</p>
+                    </div>
+                 </div>
+              ))}
+           </div>
+        </div>
+
+        {/* Operations Table */}
+        <div className="lg:col-span-2 bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">Recent Operations</h3>
@@ -658,7 +611,7 @@ const Dashboard: React.FC = () => {
               <table className="w-full text-left border-collapse">
                  <thead>
                     <tr className="bg-slate-50/50">
-                       <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Complaint ID</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Division</th>
                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority</th>
@@ -666,83 +619,55 @@ const Dashboard: React.FC = () => {
                     </tr>
                  </thead>
                   <tbody className="divide-y divide-slate-50">
-                     {filteredRecentComplaints.length > 0 ? (
-                        filteredRecentComplaints.map((c, i) => (
-                           <tr key={i} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
-                              <td className="px-8 py-5">
-                                 <span className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">#{c.id}</span>
-                                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">{c.date}</p>
-                              </td>
-                              <td className="px-8 py-5">
-                                 <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                                    <span className="text-xs font-bold text-slate-600">{c.dept}</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                 <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm border ${
-                                    c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                    c.status === 'In Progress' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                    c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                    'bg-rose-50 text-rose-600 border-rose-100'
-                                 }`}>
-                                    {c.status}
-                                 </span>
-                              </td>
-                              <td className="px-8 py-5">
-                                 <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${
-                                       c.priority === 'High' ? 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
-                                       c.priority === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                                    }`}></div>
-                                    <span className="text-xs font-bold text-slate-600">{c.priority}</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                 {c.time !== '-' ? (
-                                    <div className="flex items-center gap-2 text-emerald-600">
-                                       <Clock size={12} />
-                                       <span className="text-xs font-black">{c.time}</span>
-                                    </div>
-                                 ) : (
-                                    <span className="text-xs font-black text-slate-300">N/A</span>
-                                 )}
-                              </td>
-                           </tr>
-                        ))
-                     ) : (
-                        <tr>
-                           <td colSpan={5} className="px-8 py-20 text-center">
-                              <div className="flex flex-col items-center gap-3">
-                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300">
-                                    <Search size={24} />
-                                 </div>
-                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No matching operations found</p>
+                     {filteredRecentComplaints.map((c, i) => (
+                        <tr key={i} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
+                           <td className="px-8 py-5">
+                              <span className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">#{c.id}</span>
+                              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">{c.date}</p>
+                           </td>
+                           <td className="px-8 py-5">
+                              <div className="flex items-center gap-2">
+                                 <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                                 <span className="text-xs font-bold text-slate-600">{c.dept}</span>
                               </div>
                            </td>
+                           <td className="px-8 py-5">
+                              <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm border ${
+                                 c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                 c.status === 'In Progress' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                 c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                 'bg-rose-50 text-rose-600 border-rose-100'
+                              }`}>
+                                 {c.status}
+                              </span>
+                           </td>
+                           <td className="px-8 py-5">
+                              <div className="flex items-center gap-2">
+                                 <div className={`w-2 h-2 rounded-full ${
+                                    c.priority === 'High' ? 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
+                                    c.priority === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                                 }`}></div>
+                                 <span className="text-xs font-bold text-slate-600">{c.priority}</span>
+                              </div>
+                           </td>
+                           <td className="px-8 py-5">
+                              {c.time !== '-' ? (
+                                 <div className="flex items-center gap-2 text-emerald-600">
+                                    <Clock size={12} />
+                                    <span className="text-xs font-black">{c.time}</span>
+                                 </div>
+                              ) : (
+                                 <span className="text-xs font-black text-slate-300">N/A</span>
+                              )}
+                           </td>
                         </tr>
-                     )}
+                     ))}
                   </tbody>
               </table>
            </div>
-           
-           <div className="space-y-6">
-              {recentActivity.map((item: any, idx: number) => (
-                 <div key={idx} className="flex items-start gap-5 group/item cursor-pointer">
-                    <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 group-hover/item:scale-150 transition-transform ${
-                       item.status === 'critical' ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 
-                       item.status === 'success' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 
-                       item.status === 'update' ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]' : 'bg-slate-300 shadow-sm'
-                    }`}></div>
-                    <div className="space-y-1 pb-6 border-b border-slate-50 last:border-0 w-full group-hover/item:border-slate-100 transition-colors">
-                       <p className="text-xs font-bold text-slate-900 line-clamp-1 tracking-tight group-hover/item:text-indigo-600 transition-colors">{item.title}</p>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.time}</p>
-                    </div>
-                 </div>
-              ))}
 
            <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Viewing Page 01 / 15</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Activity Log</p>
               <div className="flex gap-2">
                  <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-900 hover:shadow-md transition-all">Previous</button>
                  <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-900 hover:shadow-md transition-all">Next</button>
