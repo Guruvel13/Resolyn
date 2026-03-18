@@ -42,7 +42,8 @@ import {
   Search,
   Map as MapIcon,
   ChevronRight,
-  MoreHorizontal
+  MoreHorizontal,
+  LayoutGrid
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -93,57 +94,200 @@ const leaderboard = [
 ];
 
 const recentComplaints = [
-  { id: 'RES-9012', dept: 'Electricity', status: 'In Progress', priority: 'High', date: '2024-03-18', time: '-' },
-  { id: 'RES-8945', dept: 'Water', status: 'Resolved', priority: 'Medium', date: '2024-03-17', time: '2.4 Days' },
-  { id: 'RES-8821', dept: 'Roads', status: 'Pending', priority: 'High', date: '2024-03-18', time: '-' },
-  { id: 'RES-8710', dept: 'Sanitation', status: 'Resolved', priority: 'Low', date: '2024-03-16', time: '1.2 Days' },
-  { id: 'RES-8633', dept: 'Public Health', status: 'Overdue', priority: 'High', date: '2024-03-12', time: '-' },
+  { id: 'RES-9012', dept: 'Electrical', status: 'In Progress', priority: 'High', date: '2024-03-18', timestamp: Date.now() - 3600000, time: '-' },
+  { id: 'RES-8945', dept: 'Water & Supply', status: 'Resolved', priority: 'Medium', date: '2024-03-17', timestamp: Date.now() - 86400000, time: '2.4 Days' },
+  { id: 'RES-8821', dept: 'Roads', status: 'Pending', priority: 'High', date: '2024-03-18', timestamp: Date.now() - 172800000, time: '-' },
+  { id: 'RES-8710', dept: 'Sanitation', status: 'Resolved', priority: 'Low', date: '2024-03-16', timestamp: Date.now() - 259200000, time: '1.2 Days' },
+  { id: 'RES-8633', dept: 'Public Health', status: 'Overdue', priority: 'High', date: '2024-03-12', timestamp: Date.now() - 604800000, time: '-' },
 ];
 
 const Dashboard: React.FC = () => {
   const [filterDept, setFilterDept] = useState('All Departments');
   const [filterStatus, setFilterStatus] = useState('All Status');
+  const [filterDate, setFilterDate] = useState('Last 7 Days');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const departments = ['All Departments', 'Water & Supply', 'Electrical', 'Sanitation', 'Roads', 'Public Health'];
+  const statuses = ['All Status', 'Resolved', 'In Progress', 'Pending', 'Overdue'];
+  const dates = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'All Time'];
+
+  const filteredRecentComplaints = useMemo(() => {
+    return recentComplaints.filter(item => {
+      const matchesDept = filterDept === 'All Departments' || item.dept === filterDept;
+      const matchesStatus = filterStatus === 'All Status' || item.status === filterStatus;
+      
+      // Date logic with buffer and fallback
+      let matchesDate = true;
+      if (item.timestamp) {
+        const now = Date.now();
+        const hourBuffer = 60 * 60 * 1000; // 1 hour buffer for execution delay
+        if (filterDate === 'Last 24 Hours') matchesDate = (now - item.timestamp) <= (24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 7 Days') matchesDate = (now - item.timestamp) <= (7 * 24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 30 Days') matchesDate = (now - item.timestamp) <= (30 * 24 * 60 * 60 * 1000 + hourBuffer);
+      }
+
+      const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            item.dept.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesDept && matchesStatus && matchesSearch && matchesDate;
+    });
+  }, [filterDept, filterStatus, filterDate, searchTerm]);
+
+  const handleExport = () => {
+    const headers = ['ID', 'Department', 'Status', 'Priority', 'Date', 'Resolution Time'];
+    const csvRows = [
+      headers.join(','),
+      ...filteredRecentComplaints.map(c => [
+        c.id, 
+        c.dept, 
+        c.status, 
+        c.priority, 
+        c.date, 
+        c.time
+      ].join(','))
+    ];
+
+    const csvString = csvRows.join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `executive_summary_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-1000 bg-slate-50/10 min-h-screen pb-20">
+    <div className="max-w-[1600px] mx-auto space-y-10 animate-in fade-in duration-1000 min-h-screen pb-20 px-2 md:px-6">
       
       {/* 1. HEADER & FILTERS */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pt-6 pb-2 transition-shadow">
-        <div>
-          <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">Executive Intelligence</h1>
-          <p className="text-slate-500 mt-1 font-medium text-sm flex items-center gap-2">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 pt-8 pb-4 transition-all">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black text-[#0f172a] tracking-tight leading-none">Executive Intelligence</h1>
+          <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
             <Activity size={14} className="text-indigo-500 animate-pulse" />
             Real-time operational overview across all divisions
           </p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
           {/* Search */}
-          <div className={`relative transition-all duration-300 ${isSearchFocused ? 'w-full lg:w-80' : 'w-full lg:w-64'}`}>
-            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-indigo-500' : 'text-slate-400'}`} size={16} />
+          <div className={`relative transition-all duration-300 ${isSearchFocused ? 'w-full xl:w-80' : 'w-full xl:w-64'}`}>
+            <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-indigo-500' : 'text-slate-400'}`} size={16} />
             <input 
               type="text" 
               placeholder="Search complaints, IDs..."
+              value={searchTerm}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium"
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium shadow-sm"
             />
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
-             <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap">
-               <Calendar size={14} className="text-slate-400" />
-               Last 7 Days
-               <ChevronDown size={14} />
-             </button>
-             <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap">
-               <Filter size={14} className="text-slate-400" />
-               {filterDept}
-               <ChevronDown size={14} />
-             </button>
-             <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all whitespace-nowrap">
+          <div className="flex items-center gap-2 relative overflow-visible z-20">
+             
+             {/* Date Dropdown */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'date' ? null : 'date')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <Calendar size={14} className="text-slate-400" />
+                  {filterDate}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'date' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'date' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2"
+                    >
+                      {dates.map(d => (
+                        <button 
+                          key={d}
+                          onClick={() => { setFilterDate(d); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === d ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             {/* Dept Dropdown */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'dept' ? null : 'dept')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <Filter size={14} className="text-slate-400" />
+                  {filterDept}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'dept' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'dept' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-56 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2"
+                    >
+                      {departments.map(dept => (
+                        <button 
+                          key={dept}
+                          onClick={() => { setFilterDept(dept); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDept === dept ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {dept}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             {/* Status Dropdown */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <LayoutGrid size={14} className="text-slate-400" />
+                  {filterStatus}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'status' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'status' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2"
+                    >
+                      {statuses.map(s => (
+                        <button 
+                          key={s}
+                          onClick={() => { setFilterStatus(s); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterStatus === s ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             <button 
+                onClick={handleExport}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all whitespace-nowrap"
+             >
                <Download size={14} />
                Export Report
              </button>
@@ -208,7 +352,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="h-80 w-full mt-4">
+          <div className="h-80 w-full mt-4 min-w-0 relative">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={trendData}>
                 <defs>
@@ -239,7 +383,7 @@ const Dashboard: React.FC = () => {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Status efficiency ratio</p>
           </div>
           
-          <div className="h-64 w-full relative">
+          <div className="h-64 w-full relative min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -290,7 +434,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentWorkload} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
@@ -314,7 +458,7 @@ const Dashboard: React.FC = () => {
             </button>
           </div>
           
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentWorkload}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -332,7 +476,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-xl font-black text-slate-900 tracking-tight">Priority Matrix</h3>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Urgency distribution</p>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -391,51 +535,64 @@ const Dashboard: React.FC = () => {
                        <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolution</th>
                     </tr>
                  </thead>
-                 <tbody className="divide-y divide-slate-50">
-                    {recentComplaints.map((c, i) => (
-                       <tr key={i} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
-                          <td className="px-8 py-5">
-                             <span className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">#{c.id}</span>
-                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">{c.date}</p>
-                          </td>
-                          <td className="px-8 py-5">
-                             <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                                <span className="text-xs font-bold text-slate-600">{c.dept}</span>
-                             </div>
-                          </td>
-                          <td className="px-8 py-5">
-                             <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm border ${
-                                c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                c.status === 'In Progress' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-                                c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                'bg-rose-50 text-rose-600 border-rose-100'
-                             }`}>
-                                {c.status}
-                             </span>
-                          </td>
-                          <td className="px-8 py-5">
-                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                   c.priority === 'High' ? 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
-                                   c.priority === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
-                                }`}></div>
-                                <span className="text-xs font-bold text-slate-600">{c.priority}</span>
-                             </div>
-                          </td>
-                          <td className="px-8 py-5">
-                             {c.time !== '-' ? (
-                                <div className="flex items-center gap-2 text-emerald-600">
-                                   <Clock size={12} />
-                                   <span className="text-xs font-black">{c.time}</span>
-                                </div>
-                             ) : (
-                                <span className="text-xs font-black text-slate-300">N/A</span>
-                             )}
-                          </td>
-                       </tr>
-                    ))}
-                 </tbody>
+                  <tbody className="divide-y divide-slate-50">
+                     {filteredRecentComplaints.length > 0 ? (
+                        filteredRecentComplaints.map((c, i) => (
+                           <tr key={i} className="group hover:bg-slate-50/50 transition-all cursor-pointer">
+                              <td className="px-8 py-5">
+                                 <span className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">#{c.id}</span>
+                                 <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">{c.date}</p>
+                              </td>
+                              <td className="px-8 py-5">
+                                 <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+                                    <span className="text-xs font-bold text-slate-600">{c.dept}</span>
+                                 </div>
+                              </td>
+                              <td className="px-8 py-5">
+                                 <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tight shadow-sm border ${
+                                    c.status === 'Resolved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    c.status === 'In Progress' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                    c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                    'bg-rose-50 text-rose-600 border-rose-100'
+                                 }`}>
+                                    {c.status}
+                                 </span>
+                              </td>
+                              <td className="px-8 py-5">
+                                 <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${
+                                       c.priority === 'High' ? 'bg-rose-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]' :
+                                       c.priority === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                                    }`}></div>
+                                    <span className="text-xs font-bold text-slate-600">{c.priority}</span>
+                                 </div>
+                              </td>
+                              <td className="px-8 py-5">
+                                 {c.time !== '-' ? (
+                                    <div className="flex items-center gap-2 text-emerald-600">
+                                       <Clock size={12} />
+                                       <span className="text-xs font-black">{c.time}</span>
+                                    </div>
+                                 ) : (
+                                    <span className="text-xs font-black text-slate-300">N/A</span>
+                                 )}
+                              </td>
+                           </tr>
+                        ))
+                     ) : (
+                        <tr>
+                           <td colSpan={5} className="px-8 py-20 text-center">
+                              <div className="flex flex-col items-center gap-3">
+                                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-300">
+                                    <Search size={24} />
+                                 </div>
+                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No matching operations found</p>
+                              </div>
+                           </td>
+                        </tr>
+                     )}
+                  </tbody>
               </table>
            </div>
 
