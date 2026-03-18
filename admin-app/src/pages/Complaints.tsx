@@ -74,6 +74,7 @@ const Complaints: React.FC = () => {
       
       const searchStr = searchTerm.toLowerCase();
       const matchesSearch = (
+        (item.ticketId || '').toLowerCase().includes(searchStr) ||
         (item._id || '').toLowerCase().includes(searchStr) || 
         (item.title || '').toLowerCase().includes(searchStr) ||
         (item.location?.address || item.location || '').toString().toLowerCase().includes(searchStr)
@@ -336,7 +337,7 @@ const Complaints: React.FC = () => {
                     <td className="px-8 py-7">
                       <div className="flex flex-col gap-1.5">
                         <span className="text-[10px] font-black text-indigo-600 bg-indigo-50/50 w-fit px-2 py-0.5 rounded-md uppercase tracking-widest border border-indigo-100/50">
-                          #{item._id?.slice(-8) || item.id}
+                          {item.ticketId || `#${item._id?.slice(-8) || item.id}`}
                         </span>
                         <span className="font-black text-slate-900 text-sm tracking-tight group-hover:text-indigo-600 transition-colors uppercase truncate pr-4">
                           {item.title}
@@ -414,7 +415,7 @@ const Complaints: React.FC = () => {
                     <div>
                         <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Incident Record</h3>
                         <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-[0.23em] mt-1 bg-indigo-50 px-2 py-0.5 rounded-full inline-block">
-                          {selectedItem._id || selectedItem.id}
+                          {selectedItem.ticketId || selectedItem._id || selectedItem.id}
                         </p>
                     </div>
                  </div>
@@ -446,28 +447,18 @@ const Complaints: React.FC = () => {
                     </p>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Information Node</h4>
-                       <div className="flex items-center gap-4 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
-                          <div className="w-12 h-12 bg-indigo-50 rounded-xl border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                             {(selectedItem.user?.name || 'A').charAt(0)}
-                          </div>
-                          <div>
-                             <p className="text-sm font-bold text-slate-900">{selectedItem.user?.name || selectedItem.reporter || 'Anonymous'}</p>
-                             <p className="text-[10px] font-medium text-slate-400 font-mono tracking-tighter">{selectedItem.user?.email || selectedItem.phone || 'N/A'}</p>
-                          </div>
-                       </div>
-                    </div>
+                 <div className="grid grid-cols-1 gap-8">
                     <div className="space-y-4">
                        <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.25em]">Geospatial Point</h4>
-                       <div className="flex items-start gap-3 bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm min-h-[5rem]">
-                          <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center shrink-0 border border-rose-100">
-                             <MapPin size={20} className="text-rose-600" />
+                       <div className="flex items-start gap-4 bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm min-h-[5rem]">
+                          <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center shrink-0 border border-rose-100">
+                             <MapPin size={24} className="text-rose-600" />
                           </div>
-                          <p className="text-xs font-bold text-slate-700 leading-snug">
-                            {selectedItem.location?.address || selectedItem.location || 'Pinned Location'}
-                          </p>
+                          <div className="flex-1">
+                             <p className="text-sm font-bold text-slate-700 leading-snug">
+                                {selectedItem.location?.address || selectedItem.location || 'Pinned Location'}
+                             </p>
+                          </div>
                        </div>
                     </div>
                  </div>

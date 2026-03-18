@@ -121,7 +121,7 @@ const Dashboard = () => {
             <div className="p-6 lg:p-8 flex-1 border-b lg:border-b-0 lg:border-r border-slate-100 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 bg-slate-100 text-slate-800 text-xs font-bold rounded-md tracking-widest uppercase border border-slate-200">
-                  {ticket._id.substring(0, 8)}
+                  {ticket.ticketId || ticket._id.substring(0, 8)}
                 </span>
                 <span className="text-sm font-semibold text-slate-500 flex items-center gap-1">
                    <Clock className="w-4 h-4" /> {new Date(ticket.createdAt).toLocaleDateString()}

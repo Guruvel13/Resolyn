@@ -29,7 +29,7 @@ const assets = [
 ];
 
 const Map: React.FC = () => {
-  const center: [number, number] = [12.9352, 77.6245];
+  const center: [number, number] = [11.0168, 76.9558]; // Coimbatore Center
   const [viewMode, setViewMode] = useState<'incidents' | 'officials' | 'assets'>('incidents');
   const [liveOfficials, setLiveOfficials] = useState(officials);
   const [mapSearch, setMapSearch] = useState('');
@@ -80,7 +80,7 @@ const Map: React.FC = () => {
     ).map(i => ({
       ...i,
       id: i._id,
-      position: [i.location?.coordinates?.[1] || 12.9352, i.location?.coordinates?.[0] || 77.6245],
+      position: [i.location?.coordinates?.[1] || 11.0168, i.location?.coordinates?.[0] || 76.9558],
       type: i.department,
       severity: i.priority,
       icon: getIcon(i.department)
@@ -95,16 +95,6 @@ const Map: React.FC = () => {
           <p className="text-indigo-600 mt-2 uppercase text-[10px] font-bold tracking-[0.2em] bg-indigo-50 px-3 py-1 rounded-full w-fit">Active Monitoring Sector: Bangalore South-East</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64 group">
-             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors" size={16} />
-             <input 
-              type="text" 
-              placeholder="Locate incident..." 
-              value={mapSearch}
-              onChange={(e) => setMapSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-[1.25rem] text-xs focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none shadow-sm"
-             />
-          </div>
           <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-[1.25rem] border border-slate-200 shadow-sm">
              {(['incidents', 'officials', 'assets'] as const).map((mode) => (
                 <button 
@@ -213,14 +203,24 @@ const Map: React.FC = () => {
           />
         </MapContainer>
 
-        <div className="absolute top-8 left-8 z-[1000] space-y-3 pointer-events-none">
-           <div className="bg-white/95 backdrop-blur-md p-4 rounded-[1.5rem] border border-slate-100 shadow-2xl flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500">
-              <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.4)]"></div>
-              <p className="text-[10px] font-bold text-slate-800 uppercase tracking-[0.2em]">Network Uplink: Active</p>
-           </div>
-           <div className="bg-slate-900/95 text-white p-4 rounded-[1.5rem] shadow-2xl flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100 -translate-x-4 group-hover:translate-x-0 border border-white/5">
-              <Zap size={16} className="text-amber-400" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">Telemetry Stream: <span className="text-white">Live</span></p>
+        {/* Floating Search by Location */}
+        <div className="absolute top-8 left-8 z-[1000] w-full max-w-[340px] pointer-events-auto">
+           <div className="relative group/search">
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-[1.75rem] blur opacity-25 group-focus-within/search:opacity-50 transition duration-1000 group-focus-within/search:duration-200"></div>
+              <div className="relative flex items-center bg-white/95 backdrop-blur-md border border-white/20 rounded-[1.5rem] shadow-2xl overflow-hidden px-4 py-3.5">
+                 <Search className="text-indigo-500 shrink-0" size={20} />
+                 <input 
+                   type="text" 
+                   placeholder="Search by location or address..." 
+                   value={mapSearch}
+                   onChange={(e) => setMapSearch(e.target.value)}
+                   className="w-full bg-transparent border-none outline-none pl-3 text-sm font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-medium"
+                 />
+                 <div className="flex items-center gap-2 border-l border-slate-100 pl-3 ml-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                    <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Live</span>
+                 </div>
+              </div>
            </div>
         </div>
 
@@ -231,18 +231,6 @@ const Map: React.FC = () => {
            <button className="w-12 h-12 bg-white text-rose-500 rounded-2xl shadow-2xl border border-slate-100 hover:bg-rose-50 transition-all hover:scale-110 active:scale-90 flex items-center justify-center">
               <AlertTriangle size={20} />
            </button>
-        </div>
-
-        <div className="absolute bottom-8 left-8 z-[1000] bg-white/95 backdrop-blur-lg p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-indigo-50/50 max-w-xs transition-all group-hover:translate-y-0 translate-y-8 opacity-0 group-hover:opacity-100 duration-500">
-           <div className="flex items-start gap-5">
-              <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl shadow-inner border border-indigo-100 flex items-center justify-center shrink-0">
-                 <Shield size={28} />
-              </div>
-              <div>
-                 <p className="text-lg font-bold text-slate-900 leading-tight tracking-tight">Sector Alpha-9</p>
-                 <p className="text-[11px] text-slate-500 mt-3 leading-relaxed font-medium">Monitoring <span className="text-indigo-600 font-bold uppercase">{viewMode}</span> dynamics. Satellite telemetry synchronized at <span className="text-slate-900 font-extrabold">1:1 scale</span>.</p>
-              </div>
-           </div>
         </div>
       </div>
     </div>

@@ -81,7 +81,7 @@ const ComplaintForm = () => {
       title: formData.description.substring(0, 50) + '...',
       description: formData.description,
       department: formData.department.name,
-      priority: 'Medium',
+      // Priority is now handled by backend AI triage
       location: {
         type: 'Point',
         coordinates: [formData.position[1], formData.position[0]],

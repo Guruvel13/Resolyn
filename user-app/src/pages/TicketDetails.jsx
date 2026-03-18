@@ -97,7 +97,7 @@ const TicketDetails = () => {
         <div>
           <p className="text-[11px] font-bold text-blue-600 tracking-wider uppercase mb-2">Ticket Status: {complaint.status}</p>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight mb-2">
-            #{complaint._id.substring(0, 8)} {complaint.title}
+            #{complaint.ticketId || complaint._id.substring(0, 8)} {complaint.title}
           </h1>
           <p className="text-slate-500 font-medium">
             {complaint.department} <span className="mx-1">•</span> {complaint.priority} Priority

@@ -1,5 +1,17 @@
 const Complaint = require('../models/Complaint');
 
+const classifyPriority = (title, desc) => {
+  const text = `${title} ${desc}`.toLowerCase();
+  const criticalWords = ['emergency', 'fire', 'collapsed', 'flood', 'spark', 'danger', 'toxic', 'hospital', 'injured'];
+  const highWords = ['outage', 'broken pipe', 'main road', 'severe', 'urgent', 'no power', 'leak'];
+  const mediumWords = ['streetlight', 'pothole', 'garbage', 'smell', 'debris', 'blocked'];
+
+  if (criticalWords.some(kw => text.includes(kw))) return 'Critical';
+  if (highWords.some(kw => text.includes(kw))) return 'High';
+  if (mediumWords.some(kw => text.includes(kw))) return 'Medium';
+  return 'Low';
+};
+
 // @desc    Create new complaint
 // @route   POST /api/complaints
 // @access  Private
@@ -7,11 +19,13 @@ const createComplaint = async (req, res) => {
   const { title, description, department, priority, location } = req.body;
 
   try {
+    const finalPriority = priority && priority !== 'Medium' ? priority : classifyPriority(title, description);
+
     const complaint = await Complaint.create({
       title,
       description,
       department,
-      priority,
+      priority: finalPriority,
       location,
       user: req.user._id
     });

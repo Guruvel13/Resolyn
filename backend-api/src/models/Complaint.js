@@ -35,6 +35,10 @@ const complaintSchema = new mongoose.Schema({
     },
     address: String
   },
+  ticketId: {
+    type: String,
+    unique: true
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -46,6 +50,33 @@ const complaintSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+complaintSchema.pre('save', async function(next) {
+  if (!this.ticketId) {
+    const deptMap = {
+      'Water & Supply': 'WTR',
+      'Electricity': 'ELC',
+      'Electrical': 'ELC',
+      'Sanitation': 'SAN',
+      'Roads & Traffic': 'RDS',
+      'Roads': 'RDS',
+      'Public Health': 'HLT',
+      'Parks & Recreation': 'PRK'
+    };
+    const deptCode = deptMap[this.department] || 'RES';
+    
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    
+    const randomChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let randomSuffix = '';
+    for (let i = 0; i < 4; i++) {
+      randomSuffix += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
+    }
+    
+    this.ticketId = `${deptCode}-${dateStr}-${randomSuffix}`;
+  }
+  next();
 });
 
 complaintSchema.index({ location: '2dsphere' });
