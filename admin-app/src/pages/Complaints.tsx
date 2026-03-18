@@ -1,13 +1,37 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Download, ChevronRight, MapPin, Clock, Tag, X, User as UserIcon, ExternalLink, MessageSquare, Check } from 'lucide-react';
 import { api } from '../services/api';
+import React, { useState, useMemo } from 'react';
+import { Search, Filter, MoreVertical, Download, ChevronRight, MapPin, Clock, Tag, X, User, ExternalLink, MessageSquare, Check, AlertCircle, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const mockComplaints = [
+  { id: 'RES-9801', title: 'Massive pipe burst flooding main road', department: 'Water & Supply', status: 'In Progress', priority: 'High', date: '2 hours ago', timestamp: Date.now() - 2 * 60 * 60 * 1000, location: 'Koramangala 4th Block', reporter: 'Anita Kumar', phone: '+91 98321 44321', desc: 'Water is gushing out from a 4-inch pipe since 8 AM today.' },
+  { id: 'RES-9705', title: 'Streetlight Pole #4521 dead', department: 'Electrical', status: 'Resolved', priority: 'Low', date: '5 hours ago', timestamp: Date.now() - 5 * 60 * 60 * 1000, location: 'HSR Layout Sector 2', reporter: 'Siddharth M.', phone: '+91 77651 22312', desc: 'Pole number 4521 has been inactive for three nights.' },
+  { id: 'RES-9692', title: 'Garbage accumulation near park entrance', department: 'Sanitation', status: 'Pending', priority: 'Medium', date: '1 day ago', timestamp: Date.now() - 24 * 60 * 60 * 1000, location: 'Indiranagar 100ft Rd', reporter: 'Ramesh Singh', phone: '+91 88902 11234', desc: 'Garbage pile is getting larger every day.' },
+  { id: 'RES-9688', title: 'Deep pothole causing bike accidents', department: 'Roads', status: 'Assigned', priority: 'Critical', date: '1 day ago', timestamp: Date.now() - 25 * 60 * 60 * 1000, location: 'Sarjapur Main Road', reporter: 'Priya K.', phone: '+91 99001 55678', desc: 'Huge pothole right after the turn near Wipro gate.' },
+  { id: 'RES-9684', title: 'Broken drainage cover on sidewalk', department: 'Water & Supply', status: 'Pending', priority: 'Medium', date: '2 days ago', timestamp: Date.now() - 48 * 60 * 60 * 1000, location: 'BTM Layout 2nd Stage', reporter: 'Karan J.', phone: '+91 91234 56789', desc: 'Crawl space drainage cover is broken.' },
+  { id: 'RES-9600', title: 'Illegal sewage connection detected', department: 'Sanitation', status: 'In Progress', priority: 'High', date: '4 days ago', timestamp: Date.now() - 96 * 60 * 60 * 1000, location: 'Whitefield Main Rd', reporter: 'Suresh L.', phone: '+91 99887 76655', desc: 'Illegal connection from commercial complex.' },
+  { id: 'RES-9550', title: 'Street flooding due to blocked drain', department: 'Water & Supply', status: 'Assigned', priority: 'High', date: '6 days ago', timestamp: Date.now() - 144 * 60 * 60 * 1000, location: 'Electronic City Ph 1', reporter: 'Megha R.', phone: '+91 99443 32211', desc: 'Road is submerged after light rain.' },
+  { id: 'RES-9400', title: 'Old tree branch touching power lines', department: 'Electrical', status: 'Pending', priority: 'Critical', date: '10 days ago', timestamp: Date.now() - 240 * 60 * 60 * 1000, location: 'Jayanagar 4th Block', reporter: 'Vikas G.', phone: '+91 98866 55443', desc: 'Sparks occurring during wind.' },
+];
 
 const Complaints: React.FC = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [filterDept, setFilterDept] = useState('All Departments');
+  const [filterDate, setFilterDate] = useState('Last 7 Days');
+  const [filterPriority, setFilterPriority] = useState('All Priority');
+  const [selectedItem, setSelectedItem] = useState<typeof mockComplaints[0] | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  const departments = ['All Departments', 'Water & Supply', 'Electrical', 'Sanitation', 'Roads', 'Public Health'];
+  const priorities = ['All Priority', 'Critical', 'High', 'Medium', 'Low'];
+  const dates = ['Last 24 Hours', 'Last 7 Days', 'Last 30 Days', 'All Time'];
 
   useEffect(() => {
     fetchComplaints();
@@ -31,8 +55,56 @@ const Complaints: React.FC = () => {
                              item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                              item.location?.address?.toLowerCase().includes(searchTerm.toLowerCase()));
       return statusMatches && searchMatches;
+      const matchesTab = activeTab === 'all' || item.status.toLowerCase() === activeTab;
+      const matchesDept = filterDept === 'All Departments' || item.department === filterDept;
+      const matchesPriority = filterPriority === 'All Priority' || item.priority === filterPriority;
+      
+      // Date logic with buffer and safety
+      let matchesDate = true;
+      if (item.timestamp) {
+        const now = Date.now();
+        const hourBuffer = 60 * 60 * 1000;
+        if (filterDate === 'Last 24 Hours') matchesDate = (now - item.timestamp) <= (24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 7 Days') matchesDate = (now - item.timestamp) <= (7 * 24 * 60 * 60 * 1000 + hourBuffer);
+        else if (filterDate === 'Last 30 Days') matchesDate = (now - item.timestamp) <= (30 * 24 * 60 * 60 * 1000 + hourBuffer);
+      }
+      
+      const matchesSearch = item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesTab && matchesSearch && matchesDept && matchesPriority && matchesDate;
     });
-  }, [activeTab, searchTerm, complaints]);
+  }, [activeTab, searchTerm, filterDept, filterPriority, filterDate, complaints]);
+
+  const handleExport = () => {
+    const headers = ['ID', 'Title', 'Department', 'Status', 'Priority', 'Location', 'Date', 'Reporter', 'Phone', 'Description'];
+    const csvRows = [
+      headers.join(','),
+      ...filteredComplaints.map(c => [
+        c.id, 
+        `"${c.title.replace(/"/g, '""')}"`, 
+        c.department, 
+        c.status, 
+        c.priority, 
+        `"${c.location.replace(/"/g, '""')}"`, 
+        c.date,
+        `"${c.reporter || ''}"`,
+        `"${c.phone || ''}"`,
+        `"${(c.desc || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`
+      ].join(','))
+    ];
+
+    const csvString = csvRows.join('\n');
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = `resolyn_complaints_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleStatusUpdate = async (id: string, newStatus: string) => {
     setIsProcessing(true);
@@ -73,26 +145,138 @@ const Complaints: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Complaint Management</h1>
-          <p className="text-slate-500 mt-1 font-medium text-sm">Review and dispatch officials to resolve civic issues.</p>
+    <div className="max-w-[1600px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 relative px-2 md:px-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 pt-4 pb-4 transition-all">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black text-[#0f172a] tracking-tight leading-none">Complaint Intelligence</h1>
+          <p className="text-slate-500 font-medium text-sm flex items-center gap-2">
+            <Filter size={14} className="text-indigo-500" />
+            Advanced operational control & official dispatching
+          </p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors" size={16} />
+        
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+          {/* Search */}
+          <div className={`relative transition-all duration-300 ${isSearchFocused ? 'w-full xl:w-80' : 'w-full xl:w-64'}`}>
+            <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${isSearchFocused ? 'text-indigo-500' : 'text-slate-400'}`} size={16} />
             <input 
               type="text" 
-              placeholder="Search ID, title..."
+              placeholder="Search ID, title, area..."
               value={searchTerm}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-slate-900/5 focus:border-slate-900 transition-all outline-none"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium shadow-sm"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm active:scale-95">
-            <Download size={18} />
-          </button>
+
+          {/* New Filters */}
+          <div className="flex items-center gap-2 relative z-20 overflow-visible">
+             
+             {/* Date Filter */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'date' ? null : 'date')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <Clock size={14} className="text-slate-400" />
+                  {filterDate}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'date' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'date' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2 overflow-hidden"
+                    >
+                      {dates.map(date => (
+                        <button 
+                          key={date}
+                          onClick={() => { setFilterDate(date); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDate === date ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {date}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             {/* Department Filter */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'dept' ? null : 'dept')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <Tag size={14} className="text-slate-400" />
+                  {filterDept}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'dept' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'dept' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-56 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2"
+                    >
+                      {departments.map(dept => (
+                        <button 
+                          key={dept}
+                          onClick={() => { setFilterDept(dept); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterDept === dept ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {dept}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             {/* Priority Filter */}
+             <div className="relative z-30">
+                <button 
+                  onClick={() => setOpenDropdown(openDropdown === 'priority' ? null : 'priority')}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-700 shadow-sm hover:border-indigo-500 transition-all whitespace-nowrap"
+                >
+                  <AlertCircle size={14} className="text-slate-400" />
+                  {filterPriority}
+                  <ChevronDown size={14} className={`transition-transform duration-300 ${openDropdown === 'priority' ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {openDropdown === 'priority' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 5, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full left-0 w-48 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[100] p-2"
+                    >
+                      {priorities.map(p => (
+                        <button 
+                          key={p}
+                          onClick={() => { setFilterPriority(p); setOpenDropdown(null); }}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${filterPriority === p ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+
+             <button 
+                onClick={handleExport}
+                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all whitespace-nowrap"
+             >
+               <Download size={14} />
+               Export Report
+             </button>
+          </div>
         </div>
       </div>
 
@@ -119,14 +303,14 @@ const Complaints: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="bg-slate-50/10 border-b border-slate-50">
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Incident</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Priority</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Geospatial Data</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Action</th>
+                <th className="w-[35%] px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Incident Details</th>
+                <th className="w-[15%] px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Status</th>
+                <th className="w-[15%] px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Priority</th>
+                <th className="w-[25%] px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Location Context</th>
+                <th className="w-[10%] px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -137,29 +321,38 @@ const Complaints: React.FC = () => {
                       <div className="flex flex-col">
                         <span className="text-[10px] font-bold text-indigo-600 mb-1.5 bg-indigo-50 w-fit px-2 py-0.5 rounded uppercase tracking-widest">{complaint._id?.substring(0, 8)}</span>
                         <span className="font-bold text-slate-900 text-sm tracking-tight group-hover:text-indigo-600 transition-colors uppercase truncate max-w-[200px]">{complaint.title}</span>
+                  <tr key={complaint.id} className="group hover:bg-slate-50/50 transition-all cursor-pointer" onClick={() => setSelectedItem(complaint)}>
+                    <td className="px-8 py-7">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-black text-indigo-600 bg-indigo-50/50 w-fit px-2 py-0.5 rounded-md uppercase tracking-widest border border-indigo-100/50">{complaint.id}</span>
+                        <span className="font-black text-slate-900 text-sm tracking-tight group-hover:text-indigo-600 transition-colors uppercase truncate pr-4">{complaint.title}</span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold uppercase border transition-all ${getStatusColor(complaint.status)}`}>
+                    <td className="px-8 py-7 text-center">
+                      <span className={`inline-flex px-3 py-1 rounded-xl text-[10px] font-black uppercase border transition-all shadow-sm ${getStatusColor(complaint.status)}`}>
                         {complaint.status}
                       </span>
                     </td>
-                    <td className="px-8 py-6 text-xs font-bold uppercase tracking-widest">
-                      <span className={getPriorityColor(complaint.priority)}>{complaint.priority}</span>
+                    <td className="px-8 py-7 text-center">
+                      <span className={`text-[11px] font-black uppercase tracking-wider ${getPriorityColor(complaint.priority)}`}>
+                        {complaint.priority}
+                      </span>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-8 py-7">
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                           <MapPin size={12} className="text-slate-300" /> {complaint.location?.address || 'Pinned Location'}
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 w-fit px-2 py-1 rounded-lg border border-slate-100">
+                          <MapPin size={10} className="text-rose-500" /> {complaint.location}
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          <Tag size={12} className="text-slate-300" /> {complaint.department}
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">
+                          <Tag size={10} className="text-slate-300" /> {complaint.department}
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6 text-right">
+                    <td className="px-8 py-7 text-right">
                       <button 
-                         className="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-100 group-hover:shadow-lg transition-all active:scale-90"
+                         className="inline-flex w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl items-center justify-center text-slate-400 group-hover:text-indigo-600 group-hover:border-indigo-100 group-hover:shadow-lg transition-all active:scale-90"
                       >
                         <ChevronRight size={20} />
                       </button>
@@ -174,6 +367,7 @@ const Complaints: React.FC = () => {
                           <Search size={32} className="text-slate-200" />
                        </div>
                        <p className="text-slate-400 font-bold uppercase text-xs tracking-[0.2em]">No records in database</p>
+                       <p className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em]">No results found for current criteria</p>
                     </div>
                   </td>
                 </tr>
